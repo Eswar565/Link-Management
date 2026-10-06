@@ -1,0 +1,226 @@
+{% extends "base.html" %}
+{% block title %}Links · Beamer{% endblock %}
+
+{% set cat_colors = {
+  'Meetings':  '#3b82f6',
+  'YouTube':   '#ef4444',
+  'Study':     '#10b981',
+  'Work':      '#f59e0b',
+  'News':      '#06b6d4',
+  'Tools':     '#8b5cf6',
+  'Social':    '#ec4899',
+  'Other':     '#6b7280'
+} %}
+
+{% set cat_icons = {
+  'Meetings':  'bi-camera-video',
+  'YouTube':   'bi-youtube',
+  'Study':     'bi-book',
+  'Work':      'bi-briefcase',
+  'News':      'bi-newspaper',
+  'Tools':     'bi-wrench',
+  'Social':    'bi-people',
+  'Other':     'bi-three-dots'
+} %}
+
+<!-- ─── Topbar ─── -->
+{% block topbar %}
+<div class="topbar">
+  <span class="topbar-title">
+    {% if selected_category %}{{ selected_category }}{% else %}All Links{% endif %}
+  </span>
+  <span class="topbar-count">{{ links | length }}</span>
+
+  <form method="GET" action="{{ url_for('index') }}" id="search-form" class="search-wrap">
+    {% if selected_category %}<input type="hidden" name="category" value="{{ selected_category }}" />{% endif %}
+    <i class="bi bi-search"></i>
+    <input type="text" name="q" class="search-input" id="search-input"
+           placeholder="Search links…" value="{{ search_query }}" autocomplete="off" />
+  </form>
+
+  <a href="{{ url_for('add_link') }}" id="btn-topbar-new"
+     style="display:flex;align-items:center;gap:5px;padding:6px 11px;border-radius:5px;background:var(--accent);color:#fff;font-size:12.5px;font-weight:600;text-decoration:none;transition:background .12s;white-space:nowrap;">
+    <i class="bi bi-plus" style="font-size:14px;"></i> New Link
+  </a>
+</div>
+{% endblock %}
+
+{% block content %}
+
+{% if links %}
+<!-- ─── Table view ─── -->
+<table style="width:100%;border-collapse:collapse;" id="links-table">
+  <thead>
+    <tr style="border-bottom:1px solid var(--border);">
+      <th style="padding:9px 20px;text-align:left;font-size:11.5px;font-weight:600;color:var(--text-3);letter-spacing:.04em;text-transform:uppercase;width:35%;">Title</th>
+      <th style="padding:9px 12px;text-align:left;font-size:11.5px;font-weight:600;color:var(--text-3);letter-spacing:.04em;text-transform:uppercase;width:30%;">URL</th>
+      <th style="padding:9px 12px;text-align:left;font-size:11.5px;font-weight:600;color:var(--text-3);letter-spacing:.04em;text-transform:uppercase;width:14%;">Category</th>
+      <th style="padding:9px 12px;text-align:left;font-size:11.5px;font-weight:600;color:var(--text-3);letter-spacing:.04em;text-transform:uppercase;width:14%;">Added</th>
+      <th style="padding:9px 12px;text-align:right;font-size:11.5px;font-weight:600;color:var(--text-3);letter-spacing:.04em;text-transform:uppercase;width:7%;"></th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for link in links %}
+    <tr class="link-row" id="link-row-{{ link.id }}"
+        style="border-bottom:1px solid var(--border);transition:background .1s;">
+      <!-- Title -->
+      <td style="padding:11px 20px;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div style="width:28px;height:28px;border-radius:6px;background:var(--bg-3);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <i class="bi {{ cat_icons.get(link.category, 'bi-link') }}"
+               style="font-size:12px;color:{{ cat_colors.get(link.category, '#6b7280') }}"></i>
+          </div>
+          <div>
+            <div style="font-size:13px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:260px;">
+              {{ link.title }}
+            </div>
+          </div>
+        </div>
+      </td>
+
+      <!-- URL -->
+      <td style="padding:11px 12px;">
+        <a href="{{ link.url }}" target="_blank" rel="noopener noreferrer"
+           style="font-size:12px;color:var(--text-3);display:flex;align-items:center;gap:4px;transition:color .12s;max-width:230px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"
+           class="url-cell" id="url-{{ link.id }}">
+          {{ link.url | truncate(40, true, '…') }}
+          <i class="bi bi-arrow-up-right" style="font-size:10px;flex-shrink:0;opacity:0;" class="link-arrow"></i>
+        </a>
+      </td>
+
+      <!-- Category -->
+      <td style="padding:11px 12px;">
+        <a href="{{ url_for('index', category=link.category) }}"
+           style="display:inline-flex;align-items:center;gap:5px;padding:2px 8px;border-radius:3px;font-size:11.5px;font-weight:500;color:{{ cat_colors.get(link.category, '#6b7280') }};background:{{ cat_colors.get(link.category, '#6b7280') }}1a;text-decoration:none;transition:background .12s;"
+           id="cat-badge-{{ link.id }}">
+          <span style="width:5px;height:5px;border-radius:50%;background:{{ cat_colors.get(link.category, '#6b7280') }};"></span>
+          {{ link.category }}
+        </a>
+      </td>
+
+      <!-- Date -->
+      <td style="padding:11px 12px;">
+        <span style="font-size:12px;color:var(--text-3);">
+          {{ link.created_at.strftime('%b %d, %Y') }}
+        </span>
+      </td>
+
+      <!-- Actions -->
+      <td style="padding:11px 12px 11px 0;text-align:right;">
+        <div class="row-actions" style="display:flex;align-items:center;justify-content:flex-end;gap:2px;opacity:0;transition:opacity .12s;">
+          <a href="{{ link.url }}" target="_blank" rel="noopener noreferrer"
+             title="Open" id="open-{{ link.id }}"
+             style="display:flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:5px;color:var(--text-2);transition:background .1s,color .1s;">
+            <i class="bi bi-arrow-up-right" style="font-size:13px;"></i>
+          </a>
+          <a href="{{ url_for('edit_link', link_id=link.id) }}"
+             title="Edit" id="edit-{{ link.id }}"
+             style="display:flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:5px;color:var(--text-2);transition:background .1s,color .1s;">
+            <i class="bi bi-pencil" style="font-size:12px;"></i>
+          </a>
+          <button
+             title="Delete" id="delete-btn-{{ link.id }}"
+             data-id="{{ link.id }}" data-title="{{ link.title }}"
+             onclick="openDeleteDialog(this)"
+             style="display:flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:5px;color:var(--text-2);border:none;background:transparent;transition:background .1s,color .1s;">
+            <i class="bi bi-trash" style="font-size:12px;"></i>
+          </button>
+        </div>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+{% else %}
+<!-- ─── Empty state ─── -->
+<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:calc(100vh - 52px);gap:12px;padding:40px;">
+  <div style="width:44px;height:44px;border-radius:10px;background:var(--bg-3);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;">
+    <i class="bi bi-link-45deg" style="font-size:20px;color:var(--text-3);"></i>
+  </div>
+  <div style="text-align:center;">
+    <div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:4px;">
+      {% if search_query %}No results for "{{ search_query }}"{% else %}No links yet{% endif %}
+    </div>
+    <div style="font-size:13px;color:var(--text-3);">
+      {% if search_query %}
+        Try a different search term or
+        <a href="{{ url_for('index') }}" style="color:var(--accent);">clear filters</a>.
+      {% else %}
+        Add your first link to get started.
+      {% endif %}
+    </div>
+  </div>
+  {% if not search_query %}
+  <a href="{{ url_for('add_link') }}" id="btn-empty-add"
+     style="margin-top:4px;display:inline-flex;align-items:center;gap:5px;padding:7px 14px;border-radius:5px;background:var(--accent);color:#fff;font-size:13px;font-weight:600;text-decoration:none;transition:background .12s;">
+    <i class="bi bi-plus"></i> Add Link
+  </a>
+  {% endif %}
+</div>
+{% endif %}
+
+<!-- ─── Delete dialog ─── -->
+<div id="delete-overlay"
+     style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:1000;backdrop-filter:blur(2px);"
+     onclick="closeDeleteDialog()">
+</div>
+
+<div id="delete-dialog"
+     style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:1001;
+            background:var(--bg-2);border:1px solid var(--border-2);border-radius:10px;
+            padding:20px;width:340px;box-shadow:0 8px 40px rgba(0,0,0,.6);">
+  <div style="font-size:13.5px;font-weight:600;color:var(--text);margin-bottom:6px;">Delete link?</div>
+  <div style="font-size:13px;color:var(--text-2);margin-bottom:18px;">
+    <strong id="dialog-title" style="color:var(--text);"></strong> will be permanently removed.
+  </div>
+  <div style="display:flex;gap:8px;justify-content:flex-end;">
+    <button onclick="closeDeleteDialog()"
+            style="padding:6px 14px;border-radius:5px;background:var(--bg-3);border:1px solid var(--border-2);color:var(--text-2);font-size:13px;font-family:var(--font);cursor:pointer;transition:background .12s;">
+      Cancel
+    </button>
+    <form id="delete-form" method="POST" style="margin:0;">
+      <button type="submit" id="confirm-delete"
+              style="padding:6px 14px;border-radius:5px;background:#991b1b;border:none;color:#fff;font-size:13px;font-weight:600;font-family:var(--font);cursor:pointer;transition:background .12s;">
+        Delete
+      </button>
+    </form>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<style>
+  .link-row:hover { background: var(--bg-2) !important; }
+  .link-row:hover .row-actions { opacity: 1 !important; }
+  .link-row:hover .url-cell { color: var(--text-2) !important; }
+  .row-actions a:hover, .row-actions button:hover { background: var(--bg-4) !important; color: var(--text) !important; }
+</style>
+<script>
+  // Delete dialog
+  function openDeleteDialog(btn) {
+    document.getElementById('dialog-title').textContent = btn.dataset.title;
+    document.getElementById('delete-form').action = '/delete/' + btn.dataset.id;
+    document.getElementById('delete-overlay').style.display = 'block';
+    document.getElementById('delete-dialog').style.display = 'block';
+  }
+
+  function closeDeleteDialog() {
+    document.getElementById('delete-overlay').style.display = 'none';
+    document.getElementById('delete-dialog').style.display = 'none';
+  }
+
+  // Debounce search
+  const si = document.getElementById('search-input');
+  if (si) {
+    let t;
+    si.addEventListener('input', function() {
+      clearTimeout(t);
+      t = setTimeout(function() {
+        document.getElementById('search-form').submit();
+      }, 380);
+    });
+  }
+</script>
+{% endblock %}
