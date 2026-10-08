@@ -58,41 +58,43 @@ def create_app():
 
     database_url = os.getenv("DATABASE_URL") or os.getenv("POSTGRES_URL")
     if not database_url or not database_url.strip():
-        raise RuntimeError(
-            "\n" + "=" * 70 + "\n"
-            "CRITICAL: DATABASE_URL is missing!\n\n"
-            "Local development:\n"
-            "  Set DATABASE_URL in your .env file:\n"
-            "  DATABASE_URL=postgresql+psycopg://postgres:PASSWORD@localhost:5432/link-management\n\n"
-            "Vercel deployment:\n"
-            "  Add DATABASE_URL (or connect Vercel Postgres / Neon) in your\n"
-            "  Vercel Project Settings > Environment Variables.\n"
-            + "=" * 70
+        # Fallback to local SQLite instance so the app boots successfully even if DATABASE_URL was not yet set in Render environment
+        sqlite_dir = os.path.join(basedir, "instance")
+        os.makedirs(sqlite_dir, exist_ok=True)
+        database_url = f"sqlite:///{os.path.join(sqlite_dir, 'linkvault.db')}"
+        app.logger.warning(
+            "[LinkVault] ⚠️ DATABASE_URL not set! Falling back to SQLite at instance/linkvault.db. "
+            "Add DATABASE_URL in Render Environment settings to connect your production PostgreSQL database."
         )
 
     database_url = database_url.strip()
-    if database_url.startswith("postgres://"):
-        database_url = database_url.replace("postgres://", "postgresql+psycopg://", 1)
-    elif database_url.startswith("postgresql://"):
-        database_url = database_url.replace("postgresql://", "postgresql+psycopg://", 1)
+    is_sqlite = database_url.startswith("sqlite")
 
-    # If connecting to remote cloud database without explicit sslmode, ensure SSL is enabled
-    if any(h in database_url for h in ("render.com", "neon.tech", "supabase.co")) and "sslmode=" not in database_url:
-        sep = "&" if "?" in database_url else "?"
-        database_url += f"{sep}sslmode=require"
+    if is_sqlite:
+        app.config["SQLALCHEMY_DATABASE_URI"] = database_url
+        app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {}
+    else:
+        if database_url.startswith("postgres://"):
+            database_url = database_url.replace("postgres://", "postgresql+psycopg://", 1)
+        elif database_url.startswith("postgresql://"):
+            database_url = database_url.replace("postgresql://", "postgresql+psycopg://", 1)
 
-    # Serverless tuning (Vercel sets VERCEL=1)
-    is_serverless = os.getenv("VERCEL") == "1"
-    pool_size = 5 if is_serverless else 10
-    max_overflow = 10 if is_serverless else 20
+        # If connecting to remote cloud database without explicit sslmode, ensure SSL is enabled
+        if any(h in database_url for h in ("render.com", "neon.tech", "supabase.co")) and "sslmode=" not in database_url:
+            sep = "&" if "?" in database_url else "?"
+            database_url += f"{sep}sslmode=require"
 
-    app.config["SQLALCHEMY_DATABASE_URI"] = database_url
-    app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
-        "pool_size": pool_size,
-        "max_overflow": max_overflow,
-        "pool_pre_ping": True,
-        "pool_recycle": 1800,
-    }
+        is_serverless = os.getenv("VERCEL") == "1"
+        pool_size = 5 if is_serverless else 10
+        max_overflow = 10 if is_serverless else 20
+
+        app.config["SQLALCHEMY_DATABASE_URI"] = database_url
+        app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+            "pool_size": pool_size,
+            "max_overflow": max_overflow,
+            "pool_pre_ping": True,
+            "pool_recycle": 1800,
+        }
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
     # ── Extensions ────────────────────────────────────────────────────────────
@@ -114,7 +116,7 @@ def create_app():
             _migrate_schema()
             _seed_admin()
             db_initialized = True
-            app.logger.info("[LinkVault] ✓ Database tables and schema verified.")
+            app.logger.info("[LinkVault] [OK] Database tables and schema verified.")
             return True
         except Exception as e:
             app.logger.warning(f"[LinkVault] Database setup attempt note: {e}")
@@ -1001,6 +1003,8 @@ def create_app():
 def _migrate_schema():
     """Safely add new columns to existing tables (idempotent)."""
     from sqlalchemy import text
+    if db.engine.dialect.name == "sqlite":
+        return
     stmts = [
         "ALTER TABLE links ADD COLUMN IF NOT EXISTS is_starred BOOLEAN NOT NULL DEFAULT FALSE",
         "ALTER TABLE links ADD COLUMN IF NOT EXISTS is_pinned  BOOLEAN NOT NULL DEFAULT FALSE",
@@ -1031,7 +1035,7 @@ def _seed_admin():
     try:
         db.session.add(admin)
         db.session.commit()
-        print(f"[LinkVault] ✓ Default admin seeded → {admin_email}")
+        print(f"[LinkVault] [OK] Default admin seeded -> {admin_email}")
         print(f"[LinkVault]   Password: {admin_password}")
         print(f"[LinkVault]   Set ADMIN_EMAIL / ADMIN_PASSWORD in your .env to change.")
     except IntegrityError:
