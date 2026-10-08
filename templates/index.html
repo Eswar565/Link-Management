@@ -669,17 +669,7 @@
     } catch(e) { console.error('Pin toggle failed', e); }
   }
 
-  // Debounced search
-  const si = document.getElementById('search-input');
-  if (si) {
-    let t;
-    si.addEventListener('input', function() {
-      clearTimeout(t);
-      t = setTimeout(function() {
-        document.getElementById('search-form').submit();
-      }, 420);
-    });
-  }
+
 </script>
 {% endblock %}
 

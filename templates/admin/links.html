@@ -169,16 +169,4 @@
 {% endblock %}
 
 {% block scripts %}
-<script>
-  const ls = document.getElementById('link-search');
-  if (ls) {
-    let t;
-    ls.addEventListener('input', function() {
-      clearTimeout(t);
-      t = setTimeout(function() {
-        document.getElementById('link-filter-form').submit();
-      }, 420);
-    });
-  }
-</script>
 {% endblock %}

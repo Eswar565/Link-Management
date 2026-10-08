@@ -161,16 +161,4 @@
 {% endblock %}
 
 {% block scripts %}
-<script>
-  const si = document.getElementById('user-search');
-  if (si) {
-    let t;
-    si.addEventListener('input', function() {
-      clearTimeout(t);
-      t = setTimeout(function() {
-        document.getElementById('user-filter-form').submit();
-      }, 420);
-    });
-  }
-</script>
 {% endblock %}
