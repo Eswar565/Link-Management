@@ -1165,7 +1165,15 @@
         },
         body: JSON.stringify({ email, password, remember })
       });
-      const data = await res.json();
+      let data = {};
+      try {
+        data = await res.json();
+      } catch (parseErr) {
+        showModalAlert(`Server error (${res.status} ${res.statusText || 'Error'}). Check your Render database connection.`, 'error');
+        btn.disabled = false;
+        btn.innerHTML = origHTML;
+        return;
+      }
       if (res.ok && data.success) {
         showModalAlert('Success! Redirecting to workspace...', 'success');
         setTimeout(() => { window.location.href = data.redirect || '/'; }, 400);
@@ -1175,7 +1183,7 @@
         btn.innerHTML = origHTML;
       }
     } catch (err) {
-      showModalAlert('Network error occurred. Please try again.', 'error');
+      showModalAlert('Unable to reach server. Please verify server status.', 'error');
       btn.disabled = false;
       btn.innerHTML = origHTML;
     }
@@ -1213,7 +1221,15 @@
         },
         body: JSON.stringify({ name, email, password, confirm_password: confirm })
       });
-      const data = await res.json();
+      let data = {};
+      try {
+        data = await res.json();
+      } catch (parseErr) {
+        showModalAlert(`Server error (${res.status} ${res.statusText || 'Error'}). Check your Render database connection.`, 'error');
+        btn.disabled = false;
+        btn.innerHTML = origHTML;
+        return;
+      }
       if (res.ok && data.success) {
         showModalAlert('Account created! Opening workspace...', 'success');
         setTimeout(() => { window.location.href = data.redirect || '/'; }, 400);
@@ -1223,7 +1239,7 @@
         btn.innerHTML = origHTML;
       }
     } catch (err) {
-      showModalAlert('Network error occurred. Please try again.', 'error');
+      showModalAlert('Unable to reach server. Please verify server status.', 'error');
       btn.disabled = false;
       btn.innerHTML = origHTML;
     }

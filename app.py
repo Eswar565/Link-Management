@@ -76,6 +76,11 @@ def create_app():
     elif database_url.startswith("postgresql://"):
         database_url = database_url.replace("postgresql://", "postgresql+psycopg://", 1)
 
+    # If connecting to remote cloud database without explicit sslmode, ensure SSL is enabled
+    if any(h in database_url for h in ("render.com", "neon.tech", "supabase.co")) and "sslmode=" not in database_url:
+        sep = "&" if "?" in database_url else "?"
+        database_url += f"{sep}sslmode=require"
+
     # Serverless tuning (Vercel sets VERCEL=1)
     is_serverless = os.getenv("VERCEL") == "1"
     pool_size = 5 if is_serverless else 10
@@ -97,13 +102,31 @@ def create_app():
     login_manager.login_message = "Please sign in to access your workspace."
     login_manager.login_message_category = "info"
 
-    with app.app_context():
+    # Lazy database initialization helper (handles Render/Neon cold starts)
+    db_initialized = False
+
+    def _ensure_db_ready():
+        nonlocal db_initialized
+        if db_initialized:
+            return True
         try:
             db.create_all()
             _migrate_schema()
             _seed_admin()
+            db_initialized = True
+            app.logger.info("[LinkVault] ✓ Database tables and schema verified.")
+            return True
         except Exception as e:
-            app.logger.warning(f"[LinkVault] Startup database migration note: {e}")
+            app.logger.warning(f"[LinkVault] Database setup attempt note: {e}")
+            return False
+
+    with app.app_context():
+        _ensure_db_ready()
+
+    @app.before_request
+    def check_db_ready():
+        if not db_initialized:
+            _ensure_db_ready()
 
     # ═══════════════════════════════════════════════════════════════════════════
     # AUTH ROUTES
@@ -125,7 +148,17 @@ def create_app():
             password = data.get("password", "")
             remember = bool(data.get("remember"))
 
-            user = User.query.filter_by(email=email).first()
+            try:
+                if not db_initialized:
+                    _ensure_db_ready()
+                user = User.query.filter_by(email=email).first()
+            except Exception as e:
+                app.logger.error(f"[LinkVault Login Error] Database query failed: {e}")
+                err_msg = "Database connection error. Please verify your Render DATABASE_URL."
+                if is_ajax:
+                    return jsonify({"success": False, "error": err_msg}), 500
+                flash(err_msg, "danger")
+                return render_template("login.html", email=email), 500
 
             if not user or not user.check_password(password):
                 if is_ajax:
@@ -184,8 +217,18 @@ def create_app():
                 errors.append("Password must be at least 8 characters.")
             elif password != confirm:
                 errors.append("Passwords do not match.")
-            if email and User.query.filter_by(email=email).first():
-                errors.append("An account with that email already exists.")
+            try:
+                if not db_initialized:
+                    _ensure_db_ready()
+                if email and User.query.filter_by(email=email).first():
+                    errors.append("An account with that email already exists.")
+            except Exception as e:
+                app.logger.error(f"[LinkVault Register Error] Database check failed: {e}")
+                err_msg = "Database connection error. Please verify your Render DATABASE_URL."
+                if is_ajax:
+                    return jsonify({"success": False, "error": err_msg}), 500
+                flash(err_msg, "danger")
+                return render_template("register.html", form=request.form), 500
 
             if errors:
                 if is_ajax:
@@ -197,10 +240,19 @@ def create_app():
                     form=request.form,
                 )
 
-            user = User(name=name, email=email, role="user")
-            user.set_password(password)
-            db.session.add(user)
-            db.session.commit()
+            try:
+                user = User(name=name, email=email, role="user")
+                user.set_password(password)
+                db.session.add(user)
+                db.session.commit()
+            except Exception as e:
+                db.session.rollback()
+                app.logger.error(f"[LinkVault Register Error] User commit failed: {e}")
+                err_msg = "Database save failed. Please verify your Render database connection."
+                if is_ajax:
+                    return jsonify({"success": False, "error": err_msg}), 500
+                flash(err_msg, "danger")
+                return render_template("register.html", form=request.form), 500
 
             login_user(user)
             flash(f"Welcome to LinkVault, {name}! Your account is ready.", "success")
@@ -930,6 +982,17 @@ def create_app():
     @app.errorhandler(404)
     def not_found(e):
         return render_template("errors/404.html"), 404
+
+    @app.errorhandler(500)
+    def server_error(e):
+        app.logger.error(f"[LinkVault Error 500] {e}")
+        is_ajax = request.headers.get("X-Requested-With") == "XMLHttpRequest" or request.is_json
+        if is_ajax:
+            return jsonify({
+                "success": False,
+                "error": "Internal server error. Please verify your Render database connection."
+            }), 500
+        return render_template("errors/403.html"), 500
 
     return app
 
