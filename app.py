@@ -84,14 +84,10 @@ def create_app():
             sep = "&" if "?" in database_url else "?"
             database_url += f"{sep}sslmode=require"
 
-        is_serverless = os.getenv("VERCEL") == "1"
-        pool_size = 5 if is_serverless else 10
-        max_overflow = 10 if is_serverless else 20
-
         app.config["SQLALCHEMY_DATABASE_URI"] = database_url
         app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
-            "pool_size": pool_size,
-            "max_overflow": max_overflow,
+            "pool_size": 10,
+            "max_overflow": 20,
             "pool_pre_ping": True,
             "pool_recycle": 1800,
         }
