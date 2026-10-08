@@ -1,0 +1,184 @@
+{% extends "admin/base.html" %}
+{% block page_title %}All Links{% endblock %}
+
+{% block content %}
+<style>
+  .user-chip { display:inline-flex;align-items:center;gap:6px;font-size:12px; }
+  .avatar-xs { width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#7c3aed);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff;flex-shrink:0; }
+  .row-actions { display:flex;align-items:center;gap:4px;justify-content:flex-end;opacity:0;transition:opacity .12s; }
+  .data-table tbody tr:hover .row-actions { opacity:1; }
+  .link-url { display:flex;align-items:center;gap:4px;font-size:12.5px;color:#475569;font-weight:500;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;transition:color .12s; }
+  .link-url:hover { color:#4f46e5; }
+</style>
+
+<!-- Page header -->
+<div class="page-header">
+  <div class="page-header-text">
+    <h1>All Links</h1>
+    <p>Browse and manage links saved by all users.</p>
+  </div>
+  <div class="page-header-actions">
+    <a href="{{ url_for('add_link') }}" class="btn btn-primary" id="btn-add-link-admin">
+      <i class="bi bi-bookmark-plus"></i> Save Link
+    </a>
+  </div>
+</div>
+
+<div class="section-card">
+
+  <!-- Filter bar -->
+  <div class="filter-bar">
+    <form method="GET" action="{{ url_for('admin_links') }}" id="link-filter-form" style="display:contents;">
+      <input type="text" name="q" class="filter-input" id="link-search"
+             placeholder="Search title or URL…" value="{{ search }}" />
+
+      <select name="category" class="filter-select" id="cat-filter"
+              onchange="document.getElementById('link-filter-form').submit()">
+        <option value="">All categories</option>
+        {% for cat in categories %}
+        <option value="{{ cat }}" {{ 'selected' if cat_filter == cat }}>{{ cat }}</option>
+        {% endfor %}
+      </select>
+
+      <select name="user_id" class="filter-select" id="user-filter"
+              onchange="document.getElementById('link-filter-form').submit()">
+        <option value="">All users</option>
+        {% for u in all_users %}
+        <option value="{{ u.id }}" {{ 'selected' if user_filter == u.id | string }}>
+          {{ u.name }}
+        </option>
+        {% endfor %}
+      </select>
+
+      <button type="submit" class="btn btn-ghost btn-sm">
+        <i class="bi bi-search"></i>
+      </button>
+
+      {% if search or cat_filter or user_filter %}
+      <a href="{{ url_for('admin_links') }}" class="btn btn-ghost btn-sm" id="btn-clear-links">
+        <i class="bi bi-x"></i> Clear
+      </a>
+      {% endif %}
+    </form>
+    <span style="margin-left:auto;font-size:12.5px;color:var(--text-3);">
+      {{ links | length }} link{{ 's' if links | length != 1 }}
+    </span>
+  </div>
+
+  <!-- Table -->
+  {% set cat_colors = {
+    'Meetings':'#3b82f6','YouTube':'#ef4444','Study':'#10b981',
+    'Work':'#f59e0b','News':'#06b6d4','Tools':'#8b5cf6',
+    'Social':'#ec4899','Other':'#6b7280'
+  } %}
+
+  {% if links %}
+  <table class="data-table" id="admin-links-table">
+    <thead>
+      <tr>
+        <th style="width:28%">Title</th>
+        <th style="width:24%">URL</th>
+        <th style="width:13%">Category</th>
+        <th style="width:18%">Saved by</th>
+        <th style="width:10%">Date</th>
+        <th style="width:7%"></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for link in links %}
+      <tr id="admin-link-row-{{ link.id }}">
+
+        <td>
+          <div style="font-size:13.5px;font-weight:600;color:var(--text);max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="{{ link.title }}">
+            {{ link.title }}
+          </div>
+        </td>
+
+        <td>
+          <a href="{{ link.url }}" target="_blank" rel="noopener noreferrer"
+             class="link-url" title="{{ link.url }}">
+            {{ link.url | truncate(35, true, '…') }}
+            <i class="bi bi-arrow-up-right" style="font-size:10px;flex-shrink:0;"></i>
+          </a>
+        </td>
+
+        <td>
+          <span class="badge"
+                style="color:{{ cat_colors.get(link.category,'#6b7280') }};background:{{ cat_colors.get(link.category,'#6b7280') }}1a;">
+            {{ link.category }}
+          </span>
+        </td>
+
+        <td>
+          <div class="user-chip">
+            <div class="avatar-xs">{{ link.owner.initials }}</div>
+            <span style="color:#0f172a;font-weight:600;">{{ link.owner.name }}</span>
+          </div>
+        </td>
+
+        <td style="font-size:12px;color:#475569;font-weight:500;white-space:nowrap;">
+          {{ link.created_at.strftime('%b %d, %Y') }}
+        </td>
+
+        <td>
+          <div class="row-actions">
+            <a href="{{ url_for('edit_link', link_id=link.id) }}"
+               class="action-icon" title="Edit" id="admin-edit-link-{{ link.id }}">
+              <i class="bi bi-pencil" style="font-size:13px;"></i>
+            </a>
+            <button class="action-icon red" title="Delete"
+                    id="admin-delete-link-{{ link.id }}"
+                    onclick="openConfirmDialog(
+                      'Delete this link?',
+                      '<strong>{{ link.title | replace("'", "\\'") }}</strong> will be permanently removed.',
+                      '{{ url_for('delete_link', link_id=link.id) }}',
+                      'Delete link'
+                    )">
+              <i class="bi bi-trash" style="font-size:13px;"></i>
+            </button>
+          </div>
+        </td>
+
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  {% else %}
+  <div class="empty-state">
+    <div class="empty-state-icon"><i class="bi bi-link-45deg"></i></div>
+    <h3>
+      {% if search or cat_filter or user_filter %}
+        No links match your filters
+      {% else %}
+        No links saved yet
+      {% endif %}
+    </h3>
+    <p>
+      {% if search or cat_filter or user_filter %}
+        <a href="{{ url_for('admin_links') }}" style="color:#4f46e5;">Clear filters</a> to see all links.
+      {% else %}
+        Links saved by users will appear here.
+      {% endif %}
+    </p>
+  </div>
+  {% endif %}
+
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const ls = document.getElementById('link-search');
+  if (ls) {
+    let t;
+    ls.addEventListener('input', function() {
+      clearTimeout(t);
+      t = setTimeout(function() {
+        document.getElementById('link-filter-form').submit();
+      }, 420);
+    });
+  }
+</script>
+{% endblock %}

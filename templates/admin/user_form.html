@@ -1,0 +1,189 @@
+{% extends "admin/base.html" %}
+{% block page_title %}{{ 'Create User' if action == 'create' else 'Edit User' }}{% endblock %}
+
+{% block content %}
+<style>
+  .form-page { max-width: 580px; }
+  .form-card { background: var(--bg-2); border: 1.5px solid var(--border); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow-sm); }
+  .form-field { padding: 20px 24px; border-bottom: 1px solid var(--border); transition: background .12s; }
+  .form-field:focus-within { background: #fafbff; }
+  .form-field label { display: block; font-size: 12px; font-weight: 700; color: #0f172a; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 9px; }
+  .field-input { width: 100%; padding: 10px 14px; background: #ffffff; border: 1.5px solid #cbd5e1; border-radius: var(--radius-sm); color: #0f172a; font-size: 14px; font-weight: 500; font-family: var(--font); outline: none; transition: border-color .15s, box-shadow .15s; }
+  .field-input:focus { border-color: #4f46e5; box-shadow: 0 0 0 3px rgba(79,70,229,.1); }
+  .field-input::placeholder { color: #64748b; }
+  .input-with-icon { position: relative; }
+  .input-with-icon i { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); color: #475569; font-size: 13px; pointer-events: none; }
+  .input-with-icon .field-input { padding-left: 37px; }
+  .select-wrap { position: relative; }
+  .select-wrap .field-input { padding-right: 34px; appearance: none; cursor: pointer; }
+  .select-arrow { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: #475569; font-size: 11px; pointer-events: none; }
+  .field-hint { font-size: 12px; color: #475569; font-weight: 500; margin-top: 7px; display: flex; align-items: center; gap: 4px; }
+  .field-hint i { font-size: 11px; }
+  .form-footer { padding: 16px 24px; background: var(--bg-3); display: flex; align-items: center; justify-content: space-between; }
+  .form-footer-note { font-size: 12.5px; color: #475569; font-weight: 500; }
+  .form-footer-actions { display: flex; gap: 10px; }
+  .role-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .role-card { position: relative; }
+  .role-card input[type=radio] { position: absolute; opacity: 0; width: 0; }
+  .role-card-label {
+    display: flex; align-items: flex-start; gap: 12px;
+    padding: 14px 16px;
+    border: 1.5px solid #cbd5e1;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: border-color .15s, background .15s;
+    background: #ffffff;
+  }
+  .role-card input:checked + .role-card-label {
+    border-color: #4f46e5;
+    background: #eef2ff;
+  }
+  .role-card-icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 14px; }
+  .role-card-icon.admin { background: #eef2ff; color: #4f46e5; }
+  .role-card-icon.user  { background: #f0fdf4; color: #16a34a; }
+  .role-card-text h4 { font-size: 13.5px; font-weight: 700; color: #0f172a; margin-bottom: 2px; }
+  .role-card-text p { font-size: 12px; color: #475569; font-weight: 500; line-height: 1.4; }
+</style>
+
+<!-- Breadcrumb -->
+<div style="display:flex;align-items:center;gap:6px;font-size:13px;color:#475569;margin-bottom:24px;">
+  <a href="{{ url_for('admin_users') }}" style="color:#475569;display:flex;align-items:center;gap:5px;font-weight:500;transition:color .12s;"
+     onmouseover="this.style.color='#4f46e5'" onmouseout="this.style.color=''">
+    <i class="bi bi-people"></i> Users
+  </a>
+  <i class="bi bi-chevron-right" style="font-size:11px;color:#94a3b8;"></i>
+  <span style="color:#0f172a;font-weight:700;">
+    {{ 'Create User' if action == 'create' else 'Edit — ' + user.name }}
+  </span>
+</div>
+
+<!-- Page header -->
+<div class="page-header form-page" style="margin-bottom:20px;">
+  <div class="page-header-text">
+    <h1>{{ 'Create new user' if action == 'create' else 'Edit user account' }}</h1>
+    <p>
+      {% if action == 'create' %}
+        Set up login credentials and role for the new team member.
+      {% else %}
+        Update details for <strong>{{ user.email }}</strong>.
+        Leave the password blank to keep it unchanged.
+      {% endif %}
+    </p>
+  </div>
+</div>
+
+<!-- Form -->
+<div class="form-page">
+  <div class="form-card">
+    <form method="POST"
+          action="{{ url_for('admin_create_user') if action == 'create' else url_for('admin_edit_user', user_id=user.id) }}"
+          id="user-form" novalidate>
+
+      <!-- Full name -->
+      <div class="form-field">
+        <label for="name">Full Name</label>
+        <div class="input-with-icon">
+          <i class="bi bi-person"></i>
+          <input type="text" id="name" name="name" class="field-input"
+                 value="{{ form.get('name', user.name if action == 'edit' else '') }}"
+                 placeholder="e.g. Jane Smith" maxlength="100" required autofocus />
+        </div>
+      </div>
+
+      <!-- Email -->
+      <div class="form-field">
+        <label for="email">Email Address</label>
+        <div class="input-with-icon">
+          <i class="bi bi-envelope"></i>
+          <input type="email" id="email" name="email" class="field-input"
+                 value="{{ form.get('email', user.email if action == 'edit' else '') }}"
+                 placeholder="jane@company.com" maxlength="200" required />
+        </div>
+        <div class="field-hint">
+          <i class="bi bi-info-circle"></i>
+          This will be the sign-in email for the user.
+        </div>
+      </div>
+
+      <!-- Password -->
+      <div class="form-field">
+        <label for="password">
+          {{ 'Password' if action == 'create' else 'New Password' }}
+        </label>
+        <div class="input-with-icon">
+          <i class="bi bi-lock"></i>
+          <input type="password" id="password" name="password" class="field-input"
+                 placeholder="{{ 'Set a strong password (min 8 chars)' if action == 'create' else 'Leave blank to keep current password' }}"
+                 {{ 'required' if action == 'create' }}
+                 minlength="8" />
+        </div>
+        {% if action == 'edit' %}
+        <div class="field-hint">
+          <i class="bi bi-shield-lock"></i>
+          Only fill this in if you want to change the password.
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- Role -->
+      <div class="form-field">
+        <label>Role &amp; Permissions</label>
+        <div class="role-cards">
+
+          <div class="role-card">
+            <input type="radio" id="role-user" name="role" value="user"
+                   {{ 'checked' if form.get('role', user.role if action == 'edit' else 'user') == 'user' }} />
+            <label for="role-user" class="role-card-label">
+              <div class="role-card-icon user"><i class="bi bi-person"></i></div>
+              <div class="role-card-text">
+                <h4>Member</h4>
+                <p>Can save and manage their own links only.</p>
+              </div>
+            </label>
+          </div>
+
+          <div class="role-card">
+            <input type="radio" id="role-admin" name="role" value="admin"
+                   {{ 'checked' if form.get('role', user.role if action == 'edit' else '') == 'admin' }} />
+            <label for="role-admin" class="role-card-label">
+              <div class="role-card-icon admin"><i class="bi bi-shield-lock"></i></div>
+              <div class="role-card-text">
+                <h4>Administrator</h4>
+                <p>Full platform access — users, links, and settings.</p>
+              </div>
+            </label>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="form-footer">
+        <span class="form-footer-note">
+          <i class="bi bi-shield-check" style="color:#10b981;"></i>
+          Passwords are securely hashed.
+        </span>
+        <div class="form-footer-actions">
+          <a href="{{ url_for('admin_users') }}" class="btn btn-ghost" id="btn-cancel-user">Cancel</a>
+          <button type="submit" class="btn btn-primary" id="btn-save-user">
+            <i class="bi bi-{{ 'person-plus' if action == 'create' else 'check2' }}"></i>
+            {{ 'Create Account' if action == 'create' else 'Save Changes' }}
+          </button>
+        </div>
+      </div>
+
+    </form>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+  document.getElementById('user-form').addEventListener('submit', function() {
+    const btn = document.getElementById('btn-save-user');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Saving…';
+  });
+</script>
+{% endblock %}

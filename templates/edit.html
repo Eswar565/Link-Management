@@ -1,125 +1,138 @@
 {% extends "base.html" %}
-{% block title %}Edit · {{ link.title }} · Beamer{% endblock %}
-
-<!-- Topbar -->
-{% block topbar %}
-<div class="topbar">
-  <a href="{{ url_for('index') }}"
-     style="display:flex;align-items:center;gap:5px;color:var(--text-3);font-size:13px;transition:color .12s;"
-     id="breadcrumb-back-edit">
-    <i class="bi bi-chevron-left" style="font-size:11px;"></i>
-    Links
-  </a>
-  <span style="color:var(--border-2);margin:0 4px;">/</span>
-  <span style="font-size:13px;color:var(--text-2);max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
-    {{ link.title }}
-  </span>
-  <span style="color:var(--border-2);margin:0 4px;">/</span>
-  <span style="font-size:13px;font-weight:500;color:var(--text);">Edit</span>
-</div>
-{% endblock %}
+{% block title %}Edit · {{ link.title }} · LinkVault{% endblock %}
 
 {% block content %}
-<div style="max-width:520px;margin:40px auto;padding:0 20px;">
+<style>
+  .form-page { min-height: calc(100vh - 62px); background: #f8fafc; display: flex; flex-direction: column; align-items: center; padding: 48px 20px 60px; }
+  .breadcrumb { display: flex; align-items: center; gap: 6px; font-size: 13px; color: #475569; margin-bottom: 24px; width: 100%; max-width: 540px; }
+  .breadcrumb a { color: #475569; text-decoration: none; display: flex; align-items: center; gap: 5px; font-weight: 500; transition: color .12s; }
+  .breadcrumb a:hover { color: var(--accent); }
+  .breadcrumb .sep { font-size: 11px; color: #94a3b8; }
+  .breadcrumb .cur { color: #0f172a; font-weight: 700; max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .form-header { width: 100%; max-width: 540px; margin-bottom: 24px; }
+  .form-header h1 { font-size: 26px; font-weight: 800; color: #0f172a; letter-spacing: -.6px; margin-bottom: 5px; }
+  .form-header p { font-size: 14px; color: #334155; font-weight: 450; }
+  .form-card { width: 100%; max-width: 540px; background: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 20px; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,.06); }
+  .form-field { padding: 22px 26px; border-bottom: 1px solid #f1f5f9; transition: background .12s; }
+  .form-field:focus-within { background: #fafbff; }
+  .form-field label { display: block; font-size: 12px; font-weight: 700; color: #0f172a; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 8px; }
+  .field-input { width: 100%; padding: 11px 16px; background: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 12px; color: #0f172a; font-size: 14px; font-weight: 500; font-family: var(--font); outline: none; transition: border-color .15s, box-shadow .15s, background .15s; }
+  .field-input:focus { border-color: var(--accent); background: #fff; box-shadow: 0 0 0 3px rgba(79,70,229,.14); }
+  .field-input::placeholder { color: #64748b; }
+  .input-wrap { position: relative; }
+  .input-wrap i.pre { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #475569; font-size: 14px; pointer-events: none; }
+  .input-wrap .field-input { padding-left: 40px; }
+  .sel-wrap { position: relative; }
+  .sel-wrap .field-input { padding-right: 36px; appearance: none; cursor: pointer; }
+  .sel-arrow { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: #475569; font-size: 11px; pointer-events: none; }
+  .field-hint { font-size: 12px; color: #475569; font-weight: 500; margin-top: 8px; display: flex; align-items: center; gap: 5px; }
+  .field-hint i { font-size: 11px; }
+  .field-hint a { color: var(--accent); text-decoration: none; font-weight: 600; }
+  .field-hint a:hover { text-decoration: underline; }
+  .form-footer { padding: 18px 26px; background: #f8fafc; border-top: 1px solid #f1f5f9; display: flex; align-items: center; justify-content: space-between; }
+  .form-footer-note { font-size: 12.5px; color: #475569; font-weight: 500; }
+  .footer-actions { display: flex; gap: 10px; }
+  .btn-cancel { display: inline-flex; align-items: center; gap: 6px; padding: 9px 18px; border-radius: 99px; background: transparent; border: 1.5px solid #cbd5e1; color: #1e293b; font-size: 13.5px; font-weight: 600; text-decoration: none; transition: background .12s, color .12s; }
+  .btn-cancel:hover { background: #e2e8f0; color: #0f172a; }
+  .btn-save { display: inline-flex; align-items: center; gap: 7px; padding: 10px 22px; border-radius: 99px; background: linear-gradient(135deg, #4f46e5, #7c3aed); border: none; color: #fff; font-size: 13.5px; font-weight: 700; cursor: pointer; transition: transform .15s, box-shadow .15s; box-shadow: 0 4px 14px rgba(79,70,229,.35); font-family: var(--font); }
+  .btn-save:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(79,70,229,.45); }
+  .btn-save:disabled { opacity: .65; cursor: not-allowed; transform: none; }
+</style>
 
-  <!-- Page header -->
-  <div style="margin-bottom:24px;">
-    <h1 style="font-size:18px;font-weight:600;color:var(--text);margin-bottom:4px;">Edit link</h1>
-    <p style="font-size:13px;color:var(--text-3);">
-      Last updated
-      <span style="color:var(--text-2);">{{ link.created_at.strftime('%B %d, %Y') }}</span>
-    </p>
+<div class="form-page">
+  <nav class="breadcrumb">
+    <a href="{{ url_for('index') }}" id="bc-home-edit"><i class="bi bi-house"></i> My Links</a>
+    <i class="bi bi-chevron-right sep"></i>
+    <span class="cur" title="{{ link.title }}">{{ link.title }}</span>
+    <i class="bi bi-chevron-right sep"></i>
+    <span style="color:var(--text-2);font-weight:500;">Edit</span>
+  </nav>
+
+  <div class="form-header">
+    <h1>Edit link</h1>
+    <p>Last saved on {{ link.created_at.strftime('%B %d, %Y') }}</p>
   </div>
 
-  <!-- Form card -->
-  <div style="background:var(--bg-2);border:1px solid var(--border);border-radius:10px;overflow:hidden;">
+  <div class="form-card">
     <form method="POST" action="{{ url_for('edit_link', link_id=link.id) }}"
-          id="edit-link-form" novalidate>
+          id="edit-form" novalidate>
 
-      <!-- Title field -->
-      <div style="padding:18px 20px;border-bottom:1px solid var(--border);">
-        <label for="title" style="display:block;font-size:11.5px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">
-          Title
-        </label>
-        <input type="text" id="title" name="title"
+      <div class="form-field">
+        <label for="title">Title</label>
+        <input type="text" id="title" name="title" class="field-input"
                value="{{ request.form.get('title', link.title) }}"
-               maxlength="200"
-               required autofocus
-               style="width:100%;padding:8px 0;background:transparent;border:none;border-bottom:1px solid var(--border);color:var(--text);font-size:14px;font-family:var(--font);outline:none;transition:border-color .15s;"
-               onfocus="this.style.borderColor='var(--accent)'"
-               onblur="this.style.borderColor='var(--border)'" />
+               maxlength="200" required autofocus />
       </div>
 
-      <!-- URL field -->
-      <div style="padding:18px 20px;border-bottom:1px solid var(--border);">
-        <label for="url" style="display:block;font-size:11.5px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">
-          URL
-        </label>
-        <div style="display:flex;align-items:center;gap:8px;">
-          <i class="bi bi-globe" style="color:var(--text-3);font-size:13px;flex-shrink:0;"></i>
-          <input type="url" id="url" name="url"
+      <div class="form-field">
+        <label for="url">URL</label>
+        <div class="input-wrap">
+          <i class="bi bi-globe pre"></i>
+          <input type="url" id="url" name="url" class="field-input"
                  value="{{ request.form.get('url', link.url) }}"
-                 maxlength="2048"
-                 required
-                 style="flex:1;padding:8px 0;background:transparent;border:none;border-bottom:1px solid var(--border);color:var(--text);font-size:13.5px;font-family:var(--font);outline:none;transition:border-color .15s;"
-                 onfocus="this.style.borderColor='var(--accent)'"
-                 onblur="this.style.borderColor='var(--border)'" />
+                 maxlength="2048" required />
         </div>
-        <a href="{{ link.url }}" target="_blank" rel="noopener noreferrer"
-           id="current-link-preview"
-           style="display:inline-flex;align-items:center;gap:4px;margin-top:7px;font-size:11.5px;color:var(--text-3);text-decoration:none;transition:color .12s;">
-          <i class="bi bi-arrow-up-right" style="font-size:10px;"></i>
-          Open current URL
-        </a>
+        <div class="field-hint">
+          <i class="bi bi-arrow-up-right"></i>
+          <a href="{{ link.url }}" target="_blank" rel="noopener noreferrer" id="open-current">
+            Open current URL
+          </a>
+        </div>
       </div>
 
-      <!-- Category field -->
-      <div style="padding:18px 20px;border-bottom:1px solid var(--border);">
-        <label for="category" style="display:block;font-size:11.5px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">
-          Category
-        </label>
-        <select id="category" name="category" required
-                style="width:100%;padding:8px 0;background:transparent;border:none;border-bottom:1px solid var(--border);color:var(--text);font-size:13.5px;font-family:var(--font);outline:none;cursor:pointer;appearance:none;transition:border-color .15s;"
-                onfocus="this.style.borderColor='var(--accent)'"
-                onblur="this.style.borderColor='var(--border)'">
-          {% for cat in categories %}
-          <option value="{{ cat }}"
-                  style="background:var(--bg-3);color:var(--text);"
-                  {{ 'selected' if (request.form.get('category', link.category) == cat) }}>
-            {{ cat }}
-          </option>
-          {% endfor %}
-        </select>
+      <div class="form-field">
+        <label for="category">Category</label>
+        <div class="sel-wrap">
+          <select id="category" name="category" class="field-input" required>
+            {% for cat in categories %}
+            <option value="{{ cat }}"
+                    {{ 'selected' if request.form.get('category', link.category) == cat }}>
+              {{ cat }}
+            </option>
+            {% endfor %}
+          </select>
+          <i class="bi bi-chevron-down sel-arrow"></i>
+        </div>
       </div>
 
-      <!-- Footer actions -->
-      <div style="padding:14px 20px;display:flex;align-items:center;justify-content:flex-end;gap:8px;background:var(--bg-3);">
-        <a href="{{ url_for('index') }}" id="cancel-edit"
-           style="padding:7px 14px;border-radius:5px;background:transparent;border:1px solid var(--border-2);color:var(--text-2);font-size:13px;font-weight:500;text-decoration:none;transition:background .12s,color .12s;">
-          Cancel
-        </a>
-        <button type="submit" id="submit-edit"
-                style="padding:7px 16px;border-radius:5px;background:var(--accent);border:none;color:#fff;font-size:13px;font-weight:600;font-family:var(--font);cursor:pointer;transition:background .12s;display:flex;align-items:center;gap:5px;">
-          <i class="bi bi-check2" style="font-size:13px;"></i>
-          Save changes
-        </button>
+      <div class="form-field">
+        <label for="team_id">Workspace</label>
+        <div class="sel-wrap">
+          <select id="team_id" name="team_id" class="field-input">
+            <option value="personal" {{ 'selected' if not link.team_id }}>👤 Personal Workspace (Private to you)</option>
+            {% for t in user_teams %}
+            <option value="{{ t.id }}" {{ 'selected' if link.team_id == t.id }}>
+              👥 {{ t.name }} (Shared with {{ t.member_count }} team members)
+            </option>
+            {% endfor %}
+          </select>
+          <i class="bi bi-chevron-down sel-arrow"></i>
+        </div>
+      </div>
+
+      <div class="form-footer">
+        <span class="form-footer-note">
+          <kbd style="padding:2px 6px;background:var(--bg-4);border:1px solid var(--border-2);border-radius:4px;font-size:11.5px;">Esc</kbd> to cancel
+        </span>
+        <div class="footer-actions">
+          <a href="{{ url_for('index') }}" class="btn-cancel" id="btn-cancel-edit">Cancel</a>
+          <button type="submit" class="btn-save" id="btn-submit-edit">
+            <i class="bi bi-check2"></i> Save changes
+          </button>
+        </div>
       </div>
 
     </form>
-  </div>
-
-  <div style="margin-top:14px;font-size:12px;color:var(--text-3);text-align:center;">
-    Press <span class="kbd">Esc</span> to go back
   </div>
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script>
-  document.getElementById('edit-link-form').addEventListener('submit', function() {
-    const btn = document.getElementById('submit-edit');
-    btn.disabled = true;
-    btn.innerHTML = '<i class="bi bi-hourglass-split" style="font-size:12px;"></i> Saving…';
+  document.getElementById('edit-form').addEventListener('submit', function() {
+    const b = document.getElementById('btn-submit-edit');
+    b.disabled = true;
+    b.innerHTML = '<i class="bi bi-hourglass-split"></i> Saving…';
   });
   document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') window.location.href = '{{ url_for("index") }}';

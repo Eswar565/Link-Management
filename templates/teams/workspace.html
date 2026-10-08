@@ -1,0 +1,1040 @@
+{% extends "base.html" %}
+{% block title %}{{ team.name }} · Team Workspace · LinkVault{% endblock %}
+
+{% set cat_colors = {
+  'Meetings':'#3b82f6','YouTube':'#ef4444','Study':'#10b981',
+  'Work':'#f59e0b','News':'#06b6d4','Tools':'#8b5cf6',
+  'Social':'#ec4899','Other':'#6b7280'
+} %}
+
+{% block content %}
+<style>
+  .tw-page {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 30px 24px 60px;
+  }
+
+  /* ── Breadcrumb ── */
+  .tw-breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: #475569;
+    margin-bottom: 20px;
+  }
+  .tw-breadcrumb a {
+    color: #475569;
+    text-decoration: none;
+    font-weight: 500;
+  }
+  .tw-breadcrumb a:hover { color: #4f46e5; }
+  .tw-breadcrumb .sep { font-size: 11px; color: #94a3b8; }
+  .tw-breadcrumb .cur { color: #0f172a; font-weight: 700; }
+
+  /* ── Team Header Card ── */
+  .tw-header-card {
+    background: #ffffff;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 20px;
+    padding: 28px 32px;
+    margin-bottom: 28px;
+    box-shadow: 0 4px 16px rgba(0,0,0,.04);
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+
+  .tw-info-left {
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+  }
+
+  .tw-team-avatar {
+    width: 60px;
+    height: 60px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #4f46e5, #7c3aed);
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    font-weight: 800;
+    flex-shrink: 0;
+    box-shadow: 0 4px 14px rgba(79,70,229,.25);
+  }
+
+  .tw-team-title {
+    font-size: 26px;
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: -.5px;
+    margin-bottom: 5px;
+    line-height: 1.2;
+  }
+
+  .tw-team-desc {
+    font-size: 14px;
+    color: #475569;
+    margin-bottom: 12px;
+    max-width: 580px;
+  }
+
+  .tw-meta-pills {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .tw-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    border-radius: 99px;
+    font-size: 12px;
+    font-weight: 600;
+    background: #f1f5f9;
+    color: #334155;
+    border: 1px solid #cbd5e1;
+  }
+
+  .tw-pill.accent {
+    background: #eef2ff;
+    color: #4338ca;
+    border-color: #c7d2fe;
+  }
+
+  .tw-pill.owner {
+    background: #fef3c7;
+    color: #92400e;
+    border-color: #fde68a;
+  }
+
+  .tw-actions-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 12px;
+  }
+
+  .invite-box {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #f8fafc;
+    border: 1.5px dashed #cbd5e1;
+    border-radius: 10px;
+    padding: 6px 14px;
+    font-size: 12.5px;
+  }
+
+  .invite-code-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    font-weight: 700;
+    color: #64748b;
+  }
+
+  .invite-code-val {
+    font-family: monospace;
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: .5px;
+  }
+
+  .btn-copy-code {
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    padding: 3px 8px;
+    font-size: 11.5px;
+    font-weight: 600;
+    color: #334155;
+    cursor: pointer;
+    transition: background .12s, border-color .12s;
+  }
+  .btn-copy-code:hover {
+    background: #e2e8f0;
+    border-color: #94a3b8;
+    color: #0f172a;
+  }
+
+  .tw-buttons-row {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .btn-add-team-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 9px 20px;
+    border-radius: 99px;
+    background: linear-gradient(135deg, #4f46e5, #7c3aed);
+    color: #fff;
+    font-size: 13.5px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(79,70,229,.3);
+    transition: transform .15s, box-shadow .15s;
+    text-decoration: none;
+  }
+  .btn-add-team-link:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(79,70,229,.45);
+    color: #fff;
+  }
+
+  .btn-add-member {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 9px 18px;
+    border-radius: 99px;
+    background: #ffffff;
+    color: #1e293b;
+    font-size: 13.5px;
+    font-weight: 600;
+    border: 1.5px solid #cbd5e1;
+    cursor: pointer;
+    transition: background .12s, border-color .12s;
+  }
+  .btn-add-member:hover {
+    background: #f1f5f9;
+    border-color: #94a3b8;
+  }
+
+  /* ── Tabs Navigation ── */
+  .tw-tabs-nav {
+    display: flex;
+    gap: 6px;
+    border-bottom: 2px solid #e2e8f0;
+    margin-bottom: 24px;
+  }
+
+  .tw-tab-btn {
+    padding: 12px 22px;
+    font-size: 14px;
+    font-weight: 700;
+    color: #475569;
+    background: transparent;
+    border: none;
+    border-bottom: 3px solid transparent;
+    margin-bottom: -2px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: color .15s, border-color .15s;
+  }
+
+  .tw-tab-btn:hover {
+    color: #0f172a;
+  }
+
+  .tw-tab-btn.active {
+    color: #4f46e5;
+    border-bottom-color: #4f46e5;
+  }
+
+  .tw-tab-count {
+    padding: 2px 8px;
+    border-radius: 99px;
+    font-size: 11.5px;
+    background: #f1f5f9;
+    color: #475569;
+  }
+  .tw-tab-btn.active .tw-tab-count {
+    background: #eef2ff;
+    color: #4338ca;
+  }
+
+  /* ── Tab Content Panes ── */
+  .tw-tab-pane {
+    display: none;
+  }
+  .tw-tab-pane.active {
+    display: block;
+  }
+
+  /* ── Links Toolbar ── */
+  .tw-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+
+  .tw-search-form {
+    display: flex;
+    align-items: center;
+    position: relative;
+    width: 320px;
+    max-width: 100%;
+  }
+
+  .tw-search-form i {
+    position: absolute;
+    left: 14px;
+    color: #64748b;
+    font-size: 14px;
+    pointer-events: none;
+  }
+
+  .tw-search-input {
+    width: 100%;
+    padding: 9px 14px 9px 38px;
+    background: #ffffff;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 99px;
+    font-size: 13.5px;
+    font-family: var(--font);
+    color: #0f172a;
+    outline: none;
+    transition: border-color .15s, box-shadow .15s;
+  }
+  .tw-search-input:focus {
+    border-color: #4f46e5;
+    box-shadow: 0 0 0 3px rgba(79,70,229,.12);
+  }
+
+  .tw-cat-filters {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .tw-cat-chip {
+    padding: 6px 12px;
+    border-radius: 99px;
+    font-size: 12px;
+    font-weight: 600;
+    background: #ffffff;
+    color: #334155;
+    border: 1px solid #cbd5e1;
+    text-decoration: none;
+    transition: background .12s, border-color .12s, color .12s;
+  }
+  .tw-cat-chip:hover {
+    background: #f1f5f9;
+    border-color: #94a3b8;
+  }
+  .tw-cat-chip.active {
+    background: #0f172a;
+    color: #ffffff;
+    border-color: #0f172a;
+  }
+
+  /* ── Team Links Table / Cards ── */
+  .tw-links-container {
+    background: #ffffff;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,.03);
+  }
+
+  .tw-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13.5px;
+  }
+
+  .tw-table th {
+    background: #f8fafc;
+    color: #0f172a;
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 11px;
+    letter-spacing: .06em;
+    padding: 12px 18px;
+    border-bottom: 2px solid #cbd5e1;
+    text-align: left;
+  }
+
+  .tw-table td {
+    padding: 14px 18px;
+    border-bottom: 1px solid #f1f5f9;
+    color: #334155;
+    vertical-align: middle;
+  }
+
+  .tw-table tr:hover td {
+    background: #f8fafc;
+  }
+
+  .link-title-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .link-main-title {
+    font-weight: 700;
+    color: #0f172a;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .link-main-title:hover {
+    color: #4f46e5;
+  }
+
+  .link-url-sub {
+    font-size: 12px;
+    color: #64748b;
+    max-width: 380px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .author-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: #1e293b;
+  }
+
+  .author-avatar {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: #e2e8f0;
+    color: #1e293b;
+    font-size: 10px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #cbd5e1;
+  }
+
+  .badge-category {
+    display: inline-block;
+    padding: 3px 9px;
+    border-radius: 99px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #fff;
+  }
+
+  .link-actions-cell {
+    display: flex;
+    gap: 6px;
+    justify-content: flex-end;
+  }
+
+  .action-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: #f8fafc;
+    border: 1px solid #cbd5e1;
+    color: #334155;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background .12s, border-color .12s, color .12s;
+  }
+  .action-btn:hover {
+    background: #e2e8f0;
+    color: #0f172a;
+    border-color: #94a3b8;
+  }
+  .action-btn.star.active { color: #f59e0b; }
+  .action-btn.pin.active  { color: #4f46e5; }
+  .action-btn.danger:hover { background: #fee2e2; color: #dc2626; border-color: #fca5a5; }
+
+  /* ── Members Tab Layout ── */
+  .tw-members-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .tw-members-header h3 {
+    font-size: 18px;
+    font-weight: 800;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .tw-members-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 18px;
+  }
+
+  .member-card {
+    background: #ffffff;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 16px;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    box-shadow: 0 2px 6px rgba(0,0,0,.03);
+    transition: border-color .15s;
+  }
+  .member-card:hover {
+    border-color: #94a3b8;
+  }
+
+  .member-info-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .member-big-avatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #e0e7ff, #ede9fe);
+    color: #4338ca;
+    font-size: 15px;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1.5px solid #c7d2fe;
+    flex-shrink: 0;
+  }
+
+  .member-name {
+    font-size: 14.5px;
+    font-weight: 700;
+    color: #0f172a;
+  }
+
+  .member-email {
+    font-size: 12px;
+    color: #64748b;
+  }
+
+  .member-join-date {
+    font-size: 11px;
+    color: #94a3b8;
+    margin-top: 2px;
+  }
+
+  .member-role-badge {
+    padding: 3px 8px;
+    border-radius: 99px;
+    font-size: 10.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+  }
+
+  /* ── Modals ── */
+  .modal-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.5);
+    backdrop-filter: blur(4px);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .modal-backdrop.open { display: flex; }
+
+  .modal-card {
+    background: #ffffff;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 20px;
+    width: 100%;
+    max-width: 480px;
+    box-shadow: 0 25px 60px rgba(0,0,0,.15);
+  }
+
+  .modal-header {
+    padding: 18px 24px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .modal-header h3 {
+    font-size: 17px;
+    font-weight: 800;
+    color: #0f172a;
+  }
+
+  .modal-close {
+    background: transparent;
+    border: none;
+    font-size: 18px;
+    color: #64748b;
+    cursor: pointer;
+    border-radius: 6px;
+    padding: 4px;
+  }
+  .modal-close:hover { color: #0f172a; }
+
+  .modal-body { padding: 20px 24px; }
+  .modal-footer {
+    padding: 16px 24px;
+    background: #f8fafc;
+    border-top: 1px solid #f1f5f9;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    border-bottom-left-radius: 20px;
+    border-bottom-right-radius: 20px;
+  }
+
+  .modal-input {
+    width: 100%;
+    padding: 10px 14px;
+    background: #ffffff;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 10px;
+    font-size: 14px;
+    font-family: var(--font);
+    color: #0f172a;
+    outline: none;
+  }
+  .modal-input:focus {
+    border-color: #4f46e5;
+    box-shadow: 0 0 0 3px rgba(79,70,229,.12);
+  }
+
+  .empty-links-zone {
+    text-align: center;
+    padding: 50px 20px;
+  }
+</style>
+
+<div class="tw-page">
+
+  <!-- Breadcrumb -->
+  <nav class="tw-breadcrumb">
+    <a href="{{ url_for('teams_list') }}"><i class="bi bi-people"></i> Teams</a>
+    <i class="bi bi-chevron-right sep"></i>
+    <span class="cur">{{ team.name }}</span>
+  </nav>
+
+  <!-- Team Header Card -->
+  <div class="tw-header-card">
+    <div class="tw-info-left">
+      <div class="tw-team-avatar">
+        {{ team.name[:2].upper() }}
+      </div>
+      <div>
+        <h1 class="tw-team-title">{{ team.name }}</h1>
+        <div class="tw-team-desc">{{ team.description or "Collaborative workspace for all team members." }}</div>
+
+        <div class="tw-meta-pills">
+          <span class="tw-pill accent">
+            <i class="bi bi-people-fill"></i> {{ members|length }} {{ 'Member' if members|length == 1 else 'Members' }}
+          </span>
+          <span class="tw-pill">
+            <i class="bi bi-link-45deg"></i> {{ links|length }} Shared {{ 'Link' if links|length == 1 else 'Links' }}
+          </span>
+          <span class="tw-pill {{ 'owner' if user_role == 'owner' else '' }}">
+            <i class="bi bi-shield-check"></i> Role: {{ user_role|capitalize }}
+          </span>
+          <span style="font-size:12px; color:#64748b;">
+            Created by <strong>{{ team.creator.name }}</strong>
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <div class="tw-actions-right">
+      <div class="invite-box" title="Share this code with teammates so they can join">
+        <span class="invite-code-label">Invite Code:</span>
+        <span class="invite-code-val" id="invite-val">{{ team.invite_code }}</span>
+        <button class="btn-copy-code" onclick="copyInviteCode('{{ team.invite_code }}')">
+          <i class="bi bi-copy"></i> Copy
+        </button>
+      </div>
+
+      <div class="tw-buttons-row">
+        <a href="{{ url_for('add_link', team_id=team.id) }}" class="btn-add-team-link" id="btn-add-team-link">
+          <i class="bi bi-plus-circle"></i> Add Team Link
+        </a>
+
+        {% if can_manage %}
+        <button class="btn-add-member" onclick="openAddMemberModal()" id="btn-add-member">
+          <i class="bi bi-person-plus"></i> Add Member
+        </button>
+        {% endif %}
+
+        {% if user_role != 'owner' %}
+        <form method="POST" action="{{ url_for('leave_team', team_id=team.id) }}" style="display:inline;"
+              onsubmit="return confirm('Are you sure you want to leave {{ team.name }}?');">
+          <button type="submit" class="btn-add-member" style="color:#ef4444;" title="Leave this team">
+            <i class="bi bi-box-arrow-right"></i> Leave
+          </button>
+        </form>
+        {% elif can_manage and user_role == 'owner' %}
+        <form method="POST" action="{{ url_for('delete_team', team_id=team.id) }}" style="display:inline;"
+              onsubmit="return confirm('Are you sure you want to delete {{ team.name }} and all its shared team links? This cannot be undone.');">
+          <button type="submit" class="btn-add-member" style="color:#ef4444;" title="Delete team">
+            <i class="bi bi-trash"></i> Delete
+          </button>
+        </form>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabs Navigation -->
+  <div class="tw-tabs-nav">
+    <button class="tw-tab-btn {% if active_tab == 'links' %}active{% endif %}" onclick="switchTab('links')" id="tab-btn-links">
+      <i class="bi bi-link-45deg"></i> Team Links
+      <span class="tw-tab-count">{{ links|length }}</span>
+    </button>
+    <button class="tw-tab-btn {% if active_tab == 'members' %}active{% endif %}" onclick="switchTab('members')" id="tab-btn-members">
+      <i class="bi bi-people"></i> Team Members
+      <span class="tw-tab-count">{{ members|length }}</span>
+    </button>
+  </div>
+
+  <!-- TAB 1: TEAM LINKS -->
+  <div class="tw-tab-pane {% if active_tab == 'links' %}active{% endif %}" id="pane-links">
+
+    <!-- Toolbar: Search + Category Chips -->
+    <div class="tw-toolbar">
+      <form method="GET" action="{{ url_for('team_workspace', team_id=team.id) }}" class="tw-search-form">
+        <input type="hidden" name="tab" value="links" />
+        {% if selected_category %}<input type="hidden" name="category" value="{{ selected_category }}" />{% endif %}
+        <i class="bi bi-search"></i>
+        <input type="text" name="q" value="{{ search_query }}" class="tw-search-input"
+               placeholder="Search team links…" />
+      </form>
+
+      <div class="tw-cat-filters">
+        <a href="{{ url_for('team_workspace', team_id=team.id, q=search_query, tab='links') }}"
+           class="tw-cat-chip {% if not selected_category %}active{% endif %}">
+          All ({{ total_links }})
+        </a>
+        {% for cat in categories %}
+        {% set cnt = category_counts.get(cat, 0) %}
+        {% if cnt > 0 or selected_category == cat %}
+        <a href="{{ url_for('team_workspace', team_id=team.id, category=cat, q=search_query, tab='links') }}"
+           class="tw-cat-chip {% if selected_category == cat %}active{% endif %}">
+          {{ cat }} ({{ cnt }})
+        </a>
+        {% endif %}
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Links Table / List -->
+    <div class="tw-links-container">
+      {% if links %}
+      <table class="tw-table">
+        <thead>
+          <tr>
+            <th style="width: 44%;">Link &amp; Destination</th>
+            <th style="width: 16%;">Category</th>
+            <th style="width: 22%;">Added By</th>
+            <th style="width: 18%; text-align: right;">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for link in links %}
+          <tr id="link-row-{{ link.id }}">
+            <td>
+              <div class="link-title-cell">
+                <a href="{{ link.url }}" target="_blank" rel="noopener noreferrer" class="link-main-title">
+                  {{ link.title }} <i class="bi bi-box-arrow-up-right" style="font-size:11px; color:#64748b;"></i>
+                </a>
+                <span class="link-url-sub" title="{{ link.url }}">{{ link.url }}</span>
+              </div>
+            </td>
+            <td>
+              <span class="badge-category" style="background-color: {{ cat_colors.get(link.category, '#6b7280') }};">
+                {{ link.category }}
+              </span>
+            </td>
+            <td>
+              <div class="author-pill">
+                <div class="author-avatar" title="{{ link.owner.name }}">
+                  {{ link.owner.initials }}
+                </div>
+                <div>
+                  <div>{{ link.owner.name }}</div>
+                  <div style="font-size:11px; color:#64748b;">{{ link.created_at.strftime('%b %d, %Y') }}</div>
+                </div>
+              </div>
+            </td>
+            <td>
+              <div class="link-actions-cell">
+                <button class="action-btn" onclick="copyLinkUrl('{{ link.url }}')" title="Copy link URL">
+                  <i class="bi bi-copy"></i>
+                </button>
+                <button class="action-btn star {% if link.is_starred %}active{% endif %}"
+                        id="star-btn-{{ link.id }}" onclick="toggleStar({{ link.id }})" title="Star link">
+                  <i class="bi {% if link.is_starred %}bi-star-fill{% else %}bi-star{% endif %}"></i>
+                </button>
+                <button class="action-btn pin {% if link.is_pinned %}active{% endif %}"
+                        id="pin-btn-{{ link.id }}" onclick="togglePin({{ link.id }})" title="Pin link">
+                  <i class="bi {% if link.is_pinned %}bi-pin-angle-fill{% else %}bi-pin-angle{% endif %}"></i>
+                </button>
+
+                {% if link.user_id == current_user.id or can_manage %}
+                <a href="{{ url_for('edit_link', link_id=link.id) }}" class="action-btn" title="Edit link">
+                  <i class="bi bi-pencil"></i>
+                </a>
+                <form method="POST" action="{{ url_for('delete_link', link_id=link.id) }}" style="display:inline;"
+                      onsubmit="return confirm('Remove \'{{ link.title }}\' from {{ team.name }}?');">
+                  <button type="submit" class="action-btn danger" title="Delete link">
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </form>
+                {% endif %}
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <div class="empty-links-zone">
+        <i class="bi bi-link-45deg" style="font-size: 38px; color: #94a3b8;"></i>
+        <h4 style="font-size: 16px; font-weight: 700; color: #0f172a; margin: 8px 0 4px;">No Team Links Found</h4>
+        <p style="font-size: 13px; color: #64748b; margin-bottom: 16px;">
+          {% if search_query or selected_category %}
+          No links match your filter criteria. Try clearing filters.
+          {% else %}
+          No links have been saved to {{ team.name }} yet. Click below to add the first link for the team!
+          {% endif %}
+        </p>
+        <a href="{{ url_for('add_link', team_id=team.id) }}" class="btn-add-team-link">
+          <i class="bi bi-plus-circle"></i> Add Team Link
+        </a>
+      </div>
+      {% endif %}
+    </div>
+
+  </div>
+
+  <!-- TAB 2: TEAM MEMBERS -->
+  <div class="tw-tab-pane {% if active_tab == 'members' %}active{% endif %}" id="pane-members">
+
+    <div class="tw-members-header">
+      <div>
+        <h3><i class="bi bi-people-fill" style="color:#4f46e5;"></i> Team Members ({{ members|length }})</h3>
+        <p style="font-size: 13px; color: #475569;">All members listed below can view, open, and contribute links to <strong>{{ team.name }}</strong>.</p>
+      </div>
+
+      {% if can_manage %}
+      <button class="btn-add-team-link" onclick="openAddMemberModal()">
+        <i class="bi bi-person-plus-fill"></i> Add Member by Email
+      </button>
+      {% endif %}
+    </div>
+
+    <div class="tw-members-grid">
+      {% for m in members %}
+      <div class="member-card" id="member-card-{{ m.user.id }}">
+        <div class="member-info-left">
+          <div class="member-big-avatar">
+            {{ m.user.initials }}
+          </div>
+          <div>
+            <div class="member-name">{{ m.user.name }}</div>
+            <div class="member-email">{{ m.user.email }}</div>
+            <div class="member-join-date">Joined {{ m.joined_at.strftime('%b %d, %Y') }}</div>
+          </div>
+        </div>
+
+        <div style="display:flex; flex-direction:column; align-items:flex-end; gap:8px;">
+          <span class="member-role-badge role-{{ m.role }}">
+            {{ 'Owner' if m.role == 'owner' else ('Admin' if m.role == 'admin' else 'Member') }}
+          </span>
+
+          {% if can_manage and m.user_id != current_user.id and m.role != 'owner' %}
+          <div style="display:flex; gap:6px;">
+            <!-- Role Toggle Form -->
+            <form method="POST" action="{{ url_for('update_member_role', team_id=team.id, user_id=m.user.id) }}" style="display:inline;">
+              <input type="hidden" name="role" value="{{ 'admin' if m.role == 'member' else 'member' }}" />
+              <button type="submit" class="btn-copy-code" title="Toggle role between Admin and Member">
+                {{ 'Make Admin' if m.role == 'member' else 'Make Member' }}
+              </button>
+            </form>
+
+            <!-- Remove Member Form -->
+            <form method="POST" action="{{ url_for('remove_member', team_id=team.id, user_id=m.user.id) }}" style="display:inline;"
+                  onsubmit="return confirm('Remove {{ m.user.name }} from {{ team.name }}?');">
+              <button type="submit" class="btn-copy-code" style="color:#ef4444;" title="Remove member from team">
+                <i class="bi bi-person-x"></i>
+              </button>
+            </form>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+  </div>
+
+</div>
+
+<!-- ── Add Member Modal ── -->
+{% if can_manage %}
+<div class="modal-backdrop" id="modal-add-member" onclick="closeModalOnBackdrop(event, 'modal-add-member')">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h3><i class="bi bi-person-plus-fill" style="color:#4f46e5;"></i> Add Member to {{ team.name }}</h3>
+      <button class="modal-close" onclick="closeModal('modal-add-member')">&times;</button>
+    </div>
+    <form method="POST" action="{{ url_for('add_team_member', team_id=team.id) }}">
+      <div class="modal-body">
+        <div class="form-group" style="margin-bottom:14px;">
+          <label for="member-email">Registered User Email</label>
+          <input type="email" id="member-email" name="email" class="modal-input"
+                 placeholder="colleague@example.com" required autofocus />
+          <div style="font-size:12px; color:#64748b; margin-top:6px;">
+            Enter the email address of any registered LinkVault user to add them directly.
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="member-role">Team Role</label>
+          <select id="member-role" name="role" class="modal-input">
+            <option value="member" selected>Member (Can view all links &amp; add links)</option>
+            <option value="admin">Admin (Can also manage members &amp; links)</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-add-member" onclick="closeModal('modal-add-member')">Cancel</button>
+        <button type="submit" class="btn-add-team-link">
+          <i class="bi bi-check2-circle"></i> Add to Team
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endif %}
+
+<script>
+  function switchTab(tabName) {
+    document.querySelectorAll('.tw-tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tw-tab-pane').forEach(p => p.classList.remove('active'));
+
+    document.getElementById('tab-btn-' + tabName).classList.add('active');
+    document.getElementById('pane-' + tabName).classList.add('active');
+
+    // Update URL parameter without reload
+    const url = new URL(window.location);
+    url.searchParams.set('tab', tabName);
+    window.history.replaceState({}, '', url);
+  }
+
+  function openAddMemberModal() {
+    const m = document.getElementById('modal-add-member');
+    if (m) {
+      m.classList.add('open');
+      setTimeout(() => document.getElementById('member-email').focus(), 50);
+    }
+  }
+
+  function closeModal(id) {
+    const el = document.getElementById(id);
+    if (el) el.classList.remove('open');
+  }
+
+  function closeModalOnBackdrop(e, id) {
+    if (e.target.id === id) closeModal(id);
+  }
+
+  function copyInviteCode(code) {
+    navigator.clipboard.writeText(code).then(() => {
+      showToast('Invite code ' + code + ' copied to clipboard!', 'info');
+    }).catch(() => {
+      prompt('Copy invite code:', code);
+    });
+  }
+
+  function copyLinkUrl(url) {
+    navigator.clipboard.writeText(url).then(() => {
+      showToast('Link URL copied to clipboard!', 'info');
+    });
+  }
+
+  function toggleStar(linkId) {
+    fetch('/star/' + linkId, { method: 'POST' })
+      .then(res => res.json())
+      .then(data => {
+        const btn = document.getElementById('star-btn-' + linkId);
+        if (btn) {
+          const icon = btn.querySelector('i');
+          if (data.starred) {
+            btn.classList.add('active');
+            icon.className = 'bi bi-star-fill';
+          } else {
+            btn.classList.remove('active');
+            icon.className = 'bi bi-star';
+          }
+        }
+      });
+  }
+
+  function togglePin(linkId) {
+    fetch('/pin/' + linkId, { method: 'POST' })
+      .then(res => res.json())
+      .then(data => {
+        const btn = document.getElementById('pin-btn-' + linkId);
+        if (btn) {
+          const icon = btn.querySelector('i');
+          if (data.pinned) {
+            btn.classList.add('active');
+            icon.className = 'bi bi-pin-angle-fill';
+          } else {
+            btn.classList.remove('active');
+            icon.className = 'bi bi-pin-angle';
+          }
+        }
+      });
+  }
+
+  function showToast(msg, type) {
+    const zone = document.getElementById('toast-zone');
+    if (!zone) return;
+    const t = document.createElement('div');
+    t.className = 'toast-msg ' + (type || 'info');
+    t.innerHTML = '<span class="dot"></span> ' + msg;
+    zone.appendChild(t);
+    setTimeout(() => t.remove(), 3500);
+  }
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+      closeModal('modal-add-member');
+    }
+  });
+</script>
+{% endblock %}

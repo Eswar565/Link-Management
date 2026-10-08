@@ -1,6 +1,6 @@
 # 🔗 Link Management System (LMS)
 
-A lightweight **web-based Link Manager** built with Flask and SQLite. Organize, search, and manage your web links across customizable categories — all from a clean browser interface.
+A lightweight **web-based Link Manager** built with Flask and PostgreSQL. Organize, search, and manage your web links across customizable categories — all from a clean browser interface.
 
 ---
 
@@ -12,7 +12,7 @@ A lightweight **web-based Link Manager** built with Flask and SQLite. Organize, 
 - **Category Filtering** — Browse links by category with per-category counts in the sidebar
 - **Search** — Live search across link titles and URLs
 - **Auto URL Scheme** — Automatically prepends `https://` if missing
-- **Persistent Storage** — SQLite database via Flask-SQLAlchemy
+- **Persistent Storage** — PostgreSQL database via Flask-SQLAlchemy
 
 ---
 
@@ -20,17 +20,34 @@ A lightweight **web-based Link Manager** built with Flask and SQLite. Organize, 
 
 ```
 LMS/
-├── app.py              # Flask application factory & route definitions
-├── extensions.py       # SQLAlchemy instance (avoids circular imports)
-├── models.py           # Link database model
-├── requirements.txt    # Python dependencies
-├── instance/
-│   └── links.db        # SQLite database (auto-created on first run)
+├── app.py                  # Main Flask application, routes, and error handlers
+├── extensions.py           # SQLAlchemy & LoginManager instances
+├── models.py               # User & Link database models
+├── requirements.txt        # Python package dependencies
+├── .env.example            # Environment variables template
+├── .gitignore              # Git ignore rules
+├── README.md               # Documentation
+├── static/
+│   └── img/
+│       ├── favicon.svg     # Favicon icon
+│       └── logo.svg        # Brand logo
 └── templates/
-    ├── base.html       # Shared base layout
-    ├── index.html      # Home dashboard (list, filter, search)
-    ├── add.html        # Add new link form
-    └── edit.html       # Edit existing link form
+    ├── base.html           # Authenticated base layout (navbar, user dropdown, toasts)
+    ├── index.html          # User workspace (links table, categories, search, pins/stars)
+    ├── landing.html        # Public landing page with interactive auth modal
+    ├── login.html          # Standalone login page
+    ├── register.html       # Standalone registration page
+    ├── add.html            # Add new link form
+    ├── edit.html           # Edit link form
+    ├── admin/              # Administrator portal
+    │   ├── base.html       # Admin layout with sidebar navigation
+    │   ├── dashboard.html  # Platform metrics & category distribution
+    │   ├── links.html      # Global links management table
+    │   ├── users.html      # User accounts & role management
+    │   └── user_form.html  # Create & edit user form
+    └── errors/
+        ├── 403.html        # 403 Forbidden page
+        └── 404.html        # 404 Not Found page
 ```
 
 ---
@@ -57,9 +74,10 @@ Links are organized into 8 built-in categories:
 ### Prerequisites
 
 - Python 3.8+
+- PostgreSQL 12+ installed and running locally
 - pip
 
-### Installation
+### Installation & Setup
 
 1. **Clone or download the repository:**
    ```bash
@@ -69,13 +87,15 @@ Links are organized into 8 built-in categories:
 
 2. **Create and activate a virtual environment:**
    ```bash
-   python -m venv venv
+   python -m venv .venv
 
-   # Windows
-   venv\Scripts\activate
+   # Windows (PowerShell)
+   .venv\Scripts\Activate.ps1
+   # or Windows (CMD)
+   .venv\Scripts\activate.bat
 
    # macOS / Linux
-   source venv/bin/activate
+   source .venv/bin/activate
    ```
 
 3. **Install dependencies:**
@@ -83,28 +103,48 @@ Links are organized into 8 built-in categories:
    pip install -r requirements.txt
    ```
 
-4. **Run the application:**
+4. **Set up PostgreSQL database:**
+   In your PostgreSQL shell (`psql`) or pgAdmin:
+   ```sql
+   CREATE DATABASE link_management;
+   ```
+
+5. **Configure environment variables:**
+   Copy `.env.example` to `.env`:
+   ```bash
+   # Windows (PowerShell)
+   Copy-Item .env.example .env
+
+   # macOS / Linux / Git Bash
+   cp .env.example .env
+   ```
+   Open `.env` and set your local PostgreSQL credentials:
+   ```env
+   DATABASE_URL=postgresql+psycopg://postgres:YOUR_PASSWORD@localhost:5432/link_management
+   ```
+
+6. **Run the application:**
    ```bash
    python app.py
    ```
 
-5. **Open your browser and navigate to:**
+7. **Open your browser and navigate to:**
    ```
    http://127.0.0.1:5000
    ```
 
-The SQLite database (`instance/links.db`) is created automatically on first run.
+The database tables are automatically initialized on startup when the app connects to PostgreSQL.
 
 ---
 
 ## 🛠️ Tech Stack
 
-| Layer      | Technology              |
-|------------|-------------------------|
-| Backend    | Python 3, Flask 3.0.3   |
-| ORM        | Flask-SQLAlchemy 3.1.1  |
-| Database   | SQLite                  |
-| Frontend   | HTML / Jinja2 Templates |
+| Layer      | Technology               |
+|------------|--------------------------|
+| Backend    | Python 3, Flask 3.0.3    |
+| ORM        | Flask-SQLAlchemy 3.1.1   |
+| Database   | PostgreSQL (via psycopg) |
+| Frontend   | HTML / Jinja2 Templates  |
 
 ---
 
@@ -142,7 +182,10 @@ The SQLite database (`instance/links.db`) is created automatically on first run.
 ```
 Flask==3.0.3
 Flask-SQLAlchemy==3.1.1
+Flask-Login==0.6.3
 SQLAlchemy==2.0.36
+psycopg==3.3.6
+python-dotenv==1.2.4
 ```
 
 ---

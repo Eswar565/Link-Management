@@ -1,0 +1,1236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="LinkVault — Your bookmarks, beautifully organized. Save, organize, and rediscover your best resources effortlessly." />
+  <title>LinkVault · Your bookmarks, beautifully organized</title>
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='img/favicon.svg') }}" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+  <script>
+    (function() {
+      localStorage.removeItem('lv_theme');
+      document.documentElement.setAttribute('data-theme', 'light');
+    })();
+  </script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; scroll-behavior: smooth; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #ffffff;
+      color: #0f172a;
+      min-height: 100vh;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+    a { text-decoration: none; color: inherit; }
+
+    /* ══ Navbar ══════════════════════════════════════════════════════════════ */
+    .nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      padding: 0 32px;
+      background: rgba(255,255,255,.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(0,0,0,.06);
+    }
+
+    .nav-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 800;
+      font-size: 18px;
+      color: #0f172a;
+      letter-spacing: -.5px;
+      transition: opacity .15s;
+    }
+    .nav-brand:hover { opacity: .92; }
+
+    .nav-brand-img {
+      width: 34px;
+      height: 34px;
+      border-radius: 9px;
+      display: block;
+      box-shadow: 0 4px 14px rgba(15, 23, 42, 0.16);
+      transition: transform .2s ease;
+    }
+    .nav-brand:hover .nav-brand-img { transform: scale(1.06); }
+
+    .brand-accent {
+      background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .nav-right {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .btn-nav-ghost {
+      padding: 8px 18px;
+      border-radius: 99px;
+      font-size: 14px;
+      font-weight: 600;
+      color: #374151;
+      transition: background .15s, color .15s;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    .btn-nav-ghost:hover { background: #f3f4f6; color: #0f172a; }
+
+    .btn-nav-primary {
+      padding: 9px 22px;
+      border-radius: 99px;
+      font-size: 14px;
+      font-weight: 700;
+      color: #fff;
+      background: linear-gradient(135deg, #4f46e5, #7c3aed);
+      border: none;
+      cursor: pointer;
+      font-family: inherit;
+      box-shadow: 0 4px 14px rgba(79,70,229,.4);
+      transition: transform .15s, box-shadow .15s;
+    }
+
+    .btn-nav-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(79,70,229,.5); }
+
+    /* ══ Hero section ════════════════════════════════════════════════════════ */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      text-align: center;
+      padding: 100px 24px 60px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Subtle radial glow behind hero */
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: 30%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 700px; height: 500px;
+      background: radial-gradient(ellipse at center, rgba(79,70,229,.07) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    /* ── Beta badge ── */
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 6px 16px;
+      border: 1.5px solid #c7d2fe;
+      border-radius: 99px;
+      background: #f5f3ff;
+      font-size: 13px;
+      font-weight: 500;
+      color: #4f46e5;
+      margin-bottom: 28px;
+      position: relative;
+      z-index: 1;
+      animation: fadeDown .5s ease both;
+    }
+
+    .hero-badge i { font-size: 12px; }
+
+    .badge-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: #4f46e5;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50%       { opacity: .5; transform: scale(.8); }
+    }
+
+    /* ── Headline ── */
+    .hero-h1 {
+      font-size: clamp(38px, 6vw, 64px);
+      font-weight: 900;
+      color: #0f172a;
+      line-height: 1.1;
+      letter-spacing: -2px;
+      margin-bottom: 0;
+      position: relative;
+      z-index: 1;
+      animation: fadeDown .5s .1s ease both;
+    }
+
+    .hero-h1 span {
+      background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      display: block;
+    }
+
+    /* ── Sub ── */
+    .hero-sub {
+      max-width: 520px;
+      font-size: 16.5px;
+      font-weight: 450;
+      color: #334155;
+      line-height: 1.65;
+      margin: 22px auto 36px;
+      position: relative;
+      z-index: 1;
+      animation: fadeDown .5s .2s ease both;
+    }
+
+    .hero-sub em { font-style: normal; color: #4338ca; font-weight: 600; }
+
+    /* ── CTA button ── */
+    .btn-hero {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 16px 36px;
+      border-radius: 99px;
+      font-size: 16px;
+      font-weight: 700;
+      color: #fff;
+      background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+      border: none;
+      cursor: pointer;
+      font-family: inherit;
+      box-shadow: 0 8px 30px rgba(79,70,229,.45);
+      transition: transform .15s, box-shadow .15s;
+      position: relative;
+      z-index: 1;
+      text-decoration: none;
+      animation: fadeDown .5s .3s ease both;
+      letter-spacing: -.2px;
+    }
+
+    .btn-hero:hover { transform: translateY(-2px); box-shadow: 0 12px 40px rgba(79,70,229,.55); color: #fff; }
+    .btn-hero:active { transform: translateY(0); }
+
+    .btn-hero-arrow {
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      background: rgba(255,255,255,.2);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px;
+      transition: background .15s, transform .15s;
+    }
+
+    .btn-hero:hover .btn-hero-arrow { background: rgba(255,255,255,.3); transform: translateX(3px); }
+
+    /* ── Caption below CTA ── */
+    .hero-caption {
+      margin-top: 20px;
+      font-size: 13.5px;
+      color: #475569;
+      font-weight: 500;
+      letter-spacing: -.1px;
+      position: relative;
+      z-index: 1;
+      animation: fadeDown .5s .4s ease both;
+    }
+
+    @keyframes fadeDown {
+      from { opacity: 0; transform: translateY(-16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ══ Floating icons ══════════════════════════════════════════════════════ */
+    .float-zone {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+    }
+
+    .ficon {
+      position: absolute;
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 8px 28px rgba(0,0,0,.12);
+      animation: floatY var(--dur, 6s) ease-in-out infinite alternate;
+      animation-delay: var(--delay, 0s);
+      font-size: var(--sz, 22px);
+      color: #fff;
+    }
+
+    @keyframes floatY {
+      from { transform: translateY(0px) rotate(var(--rot, -3deg)); }
+      to   { transform: translateY(-14px) rotate(var(--rot2, 3deg)); }
+    }
+
+    /* Left side icons */
+    .fi-1  { width:62px; height:62px; top:22%; left:5%;   background:#1c1c1e;           --dur:6s;   --delay:0s;   --rot:-4deg;  --rot2:2deg;  --sz:28px; }
+    .fi-2  { width:54px; height:54px; top:38%; left:9%;   background:#0d6efd;           --dur:7s;   --delay:.5s;  --rot:3deg;   --rot2:-3deg; --sz:24px; }
+    .fi-3  { width:56px; height:56px; top:55%; left:4%;   background:linear-gradient(135deg,#4f46e5,#818cf8); --dur:8s; --delay:1s;   --rot:-2deg;  --rot2:4deg; --sz:26px; }
+    .fi-4  { width:50px; height:50px; top:68%; left:10%;  background:#ec4899;           --dur:6.5s; --delay:1.5s; --rot:5deg;   --rot2:-2deg; --sz:22px; }
+    .fi-5  { width:48px; height:48px; top:78%; left:6%;   background:#10b981;           --dur:7.5s; --delay:.3s;  --rot:-3deg;  --rot2:3deg;  --sz:20px; }
+    .fi-6  { width:42px; height:42px; top:28%; left:16%;  background:#f59e0b;           --dur:9s;   --delay:.8s;  --rot:2deg;   --rot2:-4deg; --sz:18px; }
+    .fi-7  { width:46px; height:46px; top:46%; left:17%;  background:linear-gradient(135deg,#ef4444,#f97316); --dur:7s; --delay:2s; --rot:-5deg; --rot2:2deg; --sz:20px; }
+
+    /* Right side icons */
+    .fi-8  { width:60px; height:60px; top:20%; right:5%;  background:#22c55e;           --dur:6.5s; --delay:.4s;  --rot:3deg;   --rot2:-3deg; --sz:28px; }
+    .fi-9  { width:52px; height:52px; top:35%; right:9%;  background:#1c1c1e;           --dur:8s;   --delay:1.2s; --rot:-4deg;  --rot2:2deg;  --sz:24px; }
+    .fi-10 { width:56px; height:56px; top:52%; right:5%;  background:linear-gradient(135deg,#0ea5e9,#6366f1); --dur:7s; --delay:.6s; --rot:2deg; --rot2:-3deg; --sz:26px; }
+    .fi-11 { width:54px; height:54px; top:67%; right:10%; background:#7c3aed;           --dur:6s;   --delay:1.8s; --rot:-3deg;  --rot2:4deg;  --sz:24px; }
+    .fi-12 { width:48px; height:48px; top:78%; right:6%;  background:#06b6d4;           --dur:8.5s; --delay:.2s;  --rot:4deg;   --rot2:-2deg; --sz:22px; }
+    .fi-13 { width:44px; height:44px; top:28%; right:17%; background:linear-gradient(135deg,#f59e0b,#ef4444); --dur:7.5s; --delay:1s; --rot:-2deg; --rot2:3deg; --sz:19px; }
+    .fi-14 { width:46px; height:46px; top:45%; right:17%; background:#3b82f6;           --dur:6s;   --delay:2.2s; --rot:3deg;   --rot2:-4deg; --sz:20px; }
+
+    /* ══ Features strip ═════════════════════════════════════════════════════ */
+    .features-strip {
+      display: flex;
+      align-items: stretch;
+      justify-content: center;
+      gap: 1px;
+      background: #e2e8f0;
+      border-top: 1px solid #e2e8f0;
+    }
+
+    .feature-item {
+      flex: 1;
+      max-width: 300px;
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      padding: 32px 28px;
+      background: #fff;
+      transition: background .15s;
+    }
+
+    .feature-item:hover { background: #fafbff; }
+
+    .feature-icon {
+      width: 38px; height: 38px;
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    .fi-indigo { background: #eef2ff; color: #4f46e5; }
+    .fi-green  { background: #f0fdf4; color: #16a34a; }
+    .fi-amber  { background: #fffbeb; color: #d97706; }
+
+    .feature-text h3 { font-size: 14.5px; font-weight: 700; color: #0f172a; margin-bottom: 5px; }
+    .feature-text p  { font-size: 13px; color: #334155; font-weight: 450; line-height: 1.55; }
+
+    /* ══ Stats bar ══════════════════════════════════════════════════════════ */
+    .stats-bar {
+      background: #f8fafc;
+      border-top: 1px solid #e2e8f0;
+      border-bottom: 1px solid #e2e8f0;
+      padding: 28px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 60px;
+      flex-wrap: wrap;
+    }
+
+    .stat-item { text-align: center; }
+    .stat-num { font-size: 28px; font-weight: 900; color: #0f172a; letter-spacing: -1px; }
+    .stat-lbl { font-size: 13px; color: #475569; margin-top: 3px; font-weight: 600; }
+
+    /* ══ How it works ════════════════════════════════════════════════════════ */
+    .how-section {
+      padding: 80px 32px;
+      text-align: center;
+    }
+
+    .section-label {
+      font-size: 11.5px;
+      font-weight: 700;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: #4f46e5;
+      margin-bottom: 12px;
+    }
+
+    .section-title {
+      font-size: clamp(24px, 4vw, 36px);
+      font-weight: 800;
+      color: #0f172a;
+      letter-spacing: -1px;
+      margin-bottom: 48px;
+    }
+
+    .how-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 24px;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .how-card {
+      text-align: left;
+      padding: 28px;
+      border-radius: 16px;
+      background: #f8fafc;
+      border: 1.5px solid #e2e8f0;
+      transition: border-color .15s, box-shadow .15s;
+    }
+
+    .how-card:hover { border-color: #c7d2fe; box-shadow: 0 6px 20px rgba(79,70,229,.08); }
+
+    .how-step {
+      width: 34px; height: 34px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #4f46e5, #7c3aed);
+      color: #fff;
+      font-size: 14px;
+      font-weight: 800;
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 14px;
+    }
+
+    .how-card h3 { font-size: 15px; font-weight: 700; color: #0f172a; margin-bottom: 7px; }
+    .how-card p  { font-size: 13.5px; color: #334155; font-weight: 450; line-height: 1.55; }
+
+    /* ══ CTA section ════════════════════════════════════════════════════════ */
+    .cta-section {
+      background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #4c1d95 100%);
+      padding: 80px 32px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .cta-section::before {
+      content: '';
+      position: absolute;
+      top: -80px; right: -80px;
+      width: 300px; height: 300px;
+      border-radius: 50%;
+      background: rgba(255,255,255,.04);
+    }
+
+    .cta-section::after {
+      content: '';
+      position: absolute;
+      bottom: -60px; left: -60px;
+      width: 200px; height: 200px;
+      border-radius: 50%;
+      background: rgba(255,255,255,.03);
+    }
+
+    .cta-section h2 {
+      font-size: clamp(26px, 4vw, 40px);
+      font-weight: 900;
+      color: #fff;
+      letter-spacing: -1px;
+      margin-bottom: 12px;
+      position: relative;
+    }
+
+    .cta-section p {
+      font-size: 16px;
+      color: rgba(255,255,255,.65);
+      margin-bottom: 36px;
+      position: relative;
+    }
+
+    .btn-cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 16px 36px;
+      border-radius: 99px;
+      background: #fff;
+      color: #4f46e5;
+      font-size: 16px;
+      font-weight: 800;
+      border: none;
+      cursor: pointer;
+      font-family: inherit;
+      box-shadow: 0 8px 30px rgba(0,0,0,.2);
+      transition: transform .15s, box-shadow .15s;
+      text-decoration: none;
+      position: relative;
+    }
+
+    .btn-cta:hover { transform: translateY(-2px); box-shadow: 0 12px 40px rgba(0,0,0,.3); }
+
+    /* ══ Footer ═════════════════════════════════════════════════════════════ */
+    .footer {
+      background: #0f172a;
+      padding: 28px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .footer-brand { font-size: 14px; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 7px; }
+    .footer-copy { font-size: 13px; color: #64748b; }
+
+    @media (max-width: 768px) {
+      .nav { padding: 0 16px; }
+      .stats-bar { gap: 32px; }
+      .features-strip { flex-direction: column; gap: 0; }
+      .feature-item { max-width: 100%; }
+      .fi-6, .fi-7, .fi-13, .fi-14 { display: none; }
+    }
+
+    @media (max-width: 540px) {
+      .ficon { display: none; }
+    }
+
+    /* ══ Interactive Auth Popup Modal ══════════════════════════════════════════ */
+    .auth-modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      background: rgba(15, 23, 42, 0.65);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .22s ease;
+    }
+    .auth-modal-backdrop.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .auth-modal-dialog {
+      width: 100%;
+      max-width: 440px;
+      background: #ffffff;
+      border-radius: 24px;
+      box-shadow: 0 25px 60px -15px rgba(0,0,0,.3), 0 0 0 1px rgba(0,0,0,.06);
+      padding: 34px 30px 30px;
+      position: relative;
+      transform: scale(0.95) translateY(10px);
+      transition: transform .22s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .auth-modal-backdrop.open .auth-modal-dialog {
+      transform: scale(1) translateY(0);
+    }
+    .modal-close-btn {
+      position: absolute;
+      top: 18px;
+      right: 18px;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: #f1f5f9;
+      border: none;
+      color: #64748b;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      cursor: pointer;
+      transition: background .15s, color .15s, transform .15s;
+    }
+    .modal-close-btn:hover {
+      background: #e2e8f0;
+      color: #0f172a;
+      transform: rotate(90deg);
+    }
+    .modal-header {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .modal-brand-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 10px;
+    }
+    .modal-header h2 {
+      font-size: 22px;
+      font-weight: 800;
+      color: #0f172a;
+      letter-spacing: -.5px;
+      margin-bottom: 4px;
+    }
+    .modal-header p {
+      font-size: 13.5px;
+      color: #475569;
+      font-weight: 500;
+    }
+    .auth-tabs {
+      display: flex;
+      background: #f1f5f9;
+      border-radius: 99px;
+      padding: 4px;
+      margin-bottom: 20px;
+    }
+    .auth-tab-btn {
+      flex: 1;
+      padding: 8px 16px;
+      border-radius: 99px;
+      border: none;
+      background: transparent;
+      font-size: 13.5px;
+      font-weight: 600;
+      color: #475569;
+      cursor: pointer;
+      font-family: inherit;
+      transition: background .15s, color .15s, box-shadow .15s;
+    }
+    .auth-tab-btn.active {
+      background: #ffffff;
+      color: #0f172a;
+      font-weight: 700;
+      box-shadow: 0 2px 8px rgba(0,0,0,.08);
+    }
+    .auth-alert {
+      padding: 10px 14px;
+      border-radius: 12px;
+      font-size: 13px;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .auth-alert.error {
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      color: #b91c1c;
+    }
+    .auth-alert.success {
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      color: #15803d;
+    }
+    .form-group {
+      margin-bottom: 15px;
+      text-align: left;
+    }
+    .form-group label {
+      display: block;
+      font-size: 12.5px;
+      font-weight: 700;
+      color: #0f172a;
+      margin-bottom: 5px;
+    }
+    .input-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+    .input-wrap .input-icon {
+      position: absolute;
+      left: 13px;
+      color: #475569;
+      font-size: 15px;
+      pointer-events: none;
+    }
+    .input-wrap input {
+      width: 100%;
+      padding: 10px 38px 10px 38px;
+      border-radius: 12px;
+      border: 1.5px solid #cbd5e1;
+      background: #fff;
+      font-size: 13.5px;
+      font-family: inherit;
+      color: #0f172a;
+      transition: border-color .15s, box-shadow .15s;
+    }
+    .input-wrap input::placeholder {
+      color: #64748b;
+    }
+    .input-wrap input:focus {
+      outline: none;
+      border-color: #4f46e5;
+      box-shadow: 0 0 0 3px rgba(79,70,229,.14);
+    }
+    .pw-toggle-btn {
+      position: absolute;
+      right: 12px;
+      background: none;
+      border: none;
+      color: #475569;
+      cursor: pointer;
+      font-size: 15px;
+      padding: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .pw-toggle-btn:hover { color: #0f172a; }
+    .pw-strength-bar {
+      height: 4px;
+      background: #e2e8f0;
+      border-radius: 99px;
+      margin-top: 6px;
+      overflow: hidden;
+    }
+    .pw-strength-fill {
+      height: 100%;
+      width: 0%;
+      transition: width .25s ease, background-color .25s ease;
+      border-radius: 99px;
+    }
+    .modal-form-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+      font-size: 13px;
+    }
+    .remember-check {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      color: #334155;
+      font-weight: 500;
+      cursor: pointer;
+    }
+    .remember-check input {
+      accent-color: #4f46e5;
+      width: 15px;
+      height: 15px;
+      cursor: pointer;
+    }
+    .btn-modal-submit {
+      width: 100%;
+      padding: 12px 20px;
+      border-radius: 99px;
+      font-size: 14.5px;
+      font-weight: 700;
+      color: #fff;
+      background: linear-gradient(135deg, #4f46e5, #7c3aed);
+      border: none;
+      cursor: pointer;
+      font-family: inherit;
+      box-shadow: 0 4px 14px rgba(79,70,229,.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: transform .15s, box-shadow .15s, opacity .15s;
+    }
+    .btn-modal-submit:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(79,70,229,.5);
+    }
+    .btn-modal-submit:disabled {
+      opacity: .6;
+      cursor: not-allowed;
+      transform: none;
+    }
+    .modal-switch-text {
+      text-align: center;
+      margin-top: 16px;
+      font-size: 13px;
+      color: #475569;
+      font-weight: 500;
+    }
+    .modal-switch-text a {
+      color: #4338ca;
+      font-weight: 700;
+      text-decoration: underline;
+    }
+
+  </style>
+</head>
+<body>
+
+<!-- ══ Navbar ══════════════════════════════════════════════════════════════════ -->
+<nav class="nav">
+  <a href="{{ url_for('landing') }}" class="nav-brand" id="nav-brand">
+    <img src="{{ url_for('static', filename='img/logo.svg') }}" alt="LinkVault" class="nav-brand-img" width="34" height="34" />
+    <span>Link<span class="brand-accent">Vault</span></span>
+  </a>
+  <div class="nav-right">
+    {% if current_user.is_authenticated %}
+      <a href="{{ url_for('admin_dashboard') if current_user.is_admin else url_for('index') }}" id="nav-workspace">
+        <button class="btn-nav-primary">My Workspace →</button>
+      </a>
+      <a href="{{ url_for('logout') }}" id="nav-logout">
+        <button class="btn-nav-ghost">Sign out</button>
+      </a>
+    {% else %}
+      <button type="button" class="btn-nav-ghost" id="nav-signup" onclick="openAuthModal('register')">Sign up</button>
+      <button type="button" class="btn-nav-primary" id="nav-login" onclick="openAuthModal('login')">Login</button>
+    {% endif %}
+  </div>
+</nav>
+
+<!-- ══ Hero ════════════════════════════════════════════════════════════════════ -->
+<section class="hero" id="hero">
+
+  <!-- Floating icons – left -->
+  <div class="float-zone">
+    <div class="ficon fi-1"><i class="bi bi-apple"></i></div>
+    <div class="ficon fi-2"><i class="bi bi-camera-video-fill"></i></div>
+    <div class="ficon fi-3"><i class="bi bi-bookmark-star-fill"></i></div>
+    <div class="ficon fi-4"><i class="bi bi-music-note-beamed"></i></div>
+    <div class="ficon fi-5"><i class="bi bi-currency-bitcoin"></i></div>
+    <div class="ficon fi-6"><i class="bi bi-stars"></i></div>
+    <div class="ficon fi-7"><i class="bi bi-youtube"></i></div>
+
+    <!-- Floating icons – right -->
+    <div class="ficon fi-8"><i class="bi bi-slack"></i></div>
+    <div class="ficon fi-9"><i class="bi bi-github"></i></div>
+    <div class="ficon fi-10"><i class="bi bi-cloud-fill"></i></div>
+    <div class="ficon fi-11"><i class="bi bi-shield-lock-fill"></i></div>
+    <div class="ficon fi-12"><i class="bi bi-globe2"></i></div>
+    <div class="ficon fi-13"><i class="bi bi-lightning-charge-fill"></i></div>
+    <div class="ficon fi-14"><i class="bi bi-code-slash"></i></div>
+  </div>
+
+  <!-- Headline -->
+  <h1 class="hero-h1">
+    Your bookmarks,
+    <span>beautifully organized</span>
+  </h1>
+
+  <!-- Subtitle -->
+  <p class="hero-sub">
+    LinkVault transforms the chaos of scattered bookmarks into an
+    <em>intelligent, searchable workspace</em>.
+    Save, organize, and rediscover your best resources effortlessly.
+  </p>
+
+  <!-- CTA -->
+  {% if current_user.is_authenticated %}
+  <a href="{{ url_for('admin_dashboard') if current_user.is_admin else url_for('index') }}" class="btn-hero" id="btn-hero-cta">
+    Open My Workspace
+    <span class="btn-hero-arrow"><i class="bi bi-arrow-right"></i></span>
+  </a>
+  {% else %}
+  <button type="button" class="btn-hero" id="btn-hero-cta" onclick="openAuthModal('login')">
+    Get started for free
+    <span class="btn-hero-arrow"><i class="bi bi-arrow-right"></i></span>
+  </button>
+  {% endif %}
+
+  <!-- Caption -->
+  <p class="hero-caption">
+    More than just bookmarks — it's your personal knowledge management system
+  </p>
+
+</section>
+
+<!-- ══ Features strip ══════════════════════════════════════════════════════════ -->
+<div class="features-strip">
+  <div class="feature-item">
+    <div class="feature-icon fi-indigo"><i class="bi bi-bookmark-plus-fill"></i></div>
+    <div class="feature-text">
+      <h3>Save in one click</h3>
+      <p>Capture any URL instantly with a title and smart category tagging.</p>
+    </div>
+  </div>
+  <div class="feature-item">
+    <div class="feature-icon fi-green"><i class="bi bi-search"></i></div>
+    <div class="feature-text">
+      <h3>Find anything fast</h3>
+      <p>Full-text search across all your links — find what you need in seconds.</p>
+    </div>
+  </div>
+  <div class="feature-item">
+    <div class="feature-icon fi-amber"><i class="bi bi-pin-angle-fill"></i></div>
+    <div class="feature-text">
+      <h3>Star &amp; pin favourites</h3>
+      <p>Highlight your most-used links with stars and pin them to the top.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ══ Stats bar ═══════════════════════════════════════════════════════════════ -->
+<div class="stats-bar">
+  <div class="stat-item">
+    <div class="stat-num">100+</div>
+    <div class="stat-lbl">Active users</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-num">10k+</div>
+    <div class="stat-lbl">Links saved</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-num">8</div>
+    <div class="stat-lbl">Smart categories</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-num">Free</div>
+    <div class="stat-lbl">Always &amp; forever</div>
+  </div>
+</div>
+
+<!-- ══ How it works ════════════════════════════════════════════════════════════ -->
+<section class="how-section">
+  <div class="section-label">How it works</div>
+  <h2 class="section-title">Up and running in 3 steps</h2>
+  <div class="how-grid">
+    <div class="how-card">
+      <div class="how-step">1</div>
+      <h3>Create your account</h3>
+      <p>Sign up in seconds — no credit card, no friction. Just your email and a password.</p>
+    </div>
+    <div class="how-card">
+      <div class="how-step">2</div>
+      <h3>Save your first link</h3>
+      <p>Paste any URL, give it a title, pick a category like Work, YouTube, or Study.</p>
+    </div>
+    <div class="how-card">
+      <div class="how-step">3</div>
+      <h3>Search, pin &amp; share</h3>
+      <p>Filter by category, search by keyword, pin your favourites and stay organised forever.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ══ Final CTA ═══════════════════════════════════════════════════════════════ -->
+<section class="cta-section">
+  <h2>Ready to tame your bookmarks?</h2>
+  <p>Join hundreds of people who stopped losing important links.</p>
+  {% if current_user.is_authenticated %}
+  <a href="{{ url_for('admin_dashboard') if current_user.is_admin else url_for('index') }}" class="btn-cta" id="btn-cta-final">
+    <i class="bi bi-rocket-takeoff-fill"></i>
+    Go to your workspace
+  </a>
+  {% else %}
+  <button type="button" class="btn-cta" id="btn-cta-final" onclick="openAuthModal('login')">
+    <i class="bi bi-rocket-takeoff-fill"></i>
+    Start for free — it's instant
+  </button>
+  {% endif %}
+</section>
+
+<!-- ══ Footer ══════════════════════════════════════════════════════════════════ -->
+<footer class="footer">
+  <div class="footer-brand">
+    <img src="{{ url_for('static', filename='img/logo.svg') }}" alt="LinkVault" width="24" height="24" style="border-radius:6px;" />
+    <span>Link<span style="color:#818cf8;">Vault</span></span>
+  </div>
+  <span class="footer-copy">© 2026 LinkVault · All rights reserved</span>
+</footer>
+
+<!-- ══ Interactive Auth Popup Modal ═══════════════════════════════════════════ -->
+<div class="auth-modal-backdrop" id="auth-modal" onclick="handleModalBackdropClick(event)">
+  <div class="auth-modal-dialog">
+    <button type="button" class="modal-close-btn" onclick="closeAuthModal()" aria-label="Close modal">
+      <i class="bi bi-x-lg"></i>
+    </button>
+
+    <div class="modal-header">
+      <div class="modal-brand-badge">
+        <img src="{{ url_for('static', filename='img/logo.svg') }}" alt="LinkVault" width="44" height="44" style="border-radius:12px;box-shadow:0 8px 24px rgba(15,23,42,0.18);" />
+      </div>
+      <h2 id="modal-title">Welcome to LinkVault</h2>
+      <p id="modal-subtitle">Sign in to access your personal link workspace</p>
+    </div>
+
+    <!-- Segmented tabs -->
+    <div class="auth-tabs">
+      <button type="button" class="auth-tab-btn active" id="tab-btn-login" onclick="switchAuthTab('login')">
+        Sign in
+      </button>
+      <button type="button" class="auth-tab-btn" id="tab-btn-register" onclick="switchAuthTab('register')">
+        Create account
+      </button>
+    </div>
+
+    <!-- Live alert box -->
+    <div id="modal-alert" class="auth-alert" style="display:none;"></div>
+
+    <!-- Sign In Form -->
+    <form id="modal-login-form" onsubmit="handleModalLogin(event)">
+      <div class="form-group">
+        <label for="m-login-email">Email address</label>
+        <div class="input-wrap">
+          <i class="bi bi-envelope input-icon"></i>
+          <input type="email" id="m-login-email" name="email" placeholder="name@company.com" required autocomplete="email" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="m-login-password">Password</label>
+        <div class="input-wrap">
+          <i class="bi bi-shield-lock input-icon"></i>
+          <input type="password" id="m-login-password" name="password" placeholder="••••••••" required autocomplete="current-password" />
+          <button type="button" class="pw-toggle-btn" onclick="toggleModalPassword('m-login-password', this)">
+            <i class="bi bi-eye"></i>
+          </button>
+        </div>
+      </div>
+      <div class="modal-form-row">
+        <label class="remember-check">
+          <input type="checkbox" id="m-login-remember" name="remember" />
+          <span>Remember me</span>
+        </label>
+      </div>
+      <button type="submit" class="btn-modal-submit" id="btn-modal-login-submit">
+        <span>Sign in to Workspace</span>
+        <i class="bi bi-arrow-right"></i>
+      </button>
+      <div class="modal-switch-text">
+        Don't have an account? <a href="javascript:void(0)" onclick="switchAuthTab('register')">Create one for free</a>
+      </div>
+    </form>
+
+    <!-- Register Form -->
+    <form id="modal-register-form" style="display:none;" onsubmit="handleModalRegister(event)">
+      <div class="form-group">
+        <label for="m-reg-name">Full name</label>
+        <div class="input-wrap">
+          <i class="bi bi-person input-icon"></i>
+          <input type="text" id="m-reg-name" name="name" placeholder="Alex Morgan" required autocomplete="name" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="m-reg-email">Email address</label>
+        <div class="input-wrap">
+          <i class="bi bi-envelope input-icon"></i>
+          <input type="email" id="m-reg-email" name="email" placeholder="alex@company.com" required autocomplete="email" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="m-reg-password">Password</label>
+        <div class="input-wrap">
+          <i class="bi bi-shield-lock input-icon"></i>
+          <input type="password" id="m-reg-password" name="password" placeholder="At least 8 characters" required minlength="8" autocomplete="new-password" oninput="checkRegStrength(this.value)" />
+          <button type="button" class="pw-toggle-btn" onclick="toggleModalPassword('m-reg-password', this)">
+            <i class="bi bi-eye"></i>
+          </button>
+        </div>
+        <div class="pw-strength-bar">
+          <div id="m-reg-strength-fill" class="pw-strength-fill"></div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="m-reg-confirm">Confirm password</label>
+        <div class="input-wrap">
+          <i class="bi bi-shield-check input-icon"></i>
+          <input type="password" id="m-reg-confirm" name="confirm_password" placeholder="Re-type your password" required autocomplete="new-password" />
+        </div>
+      </div>
+      <button type="submit" class="btn-modal-submit" id="btn-modal-reg-submit">
+        <span>Create Free Account</span>
+        <i class="bi bi-arrow-right"></i>
+      </button>
+      <div class="modal-switch-text">
+        Already have an account? <a href="javascript:void(0)" onclick="switchAuthTab('login')">Sign in</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  function openAuthModal(tab) {
+    const modal = document.getElementById('auth-modal');
+    modal.classList.add('open');
+    document.body.style.overflow = 'hidden';
+    switchAuthTab(tab || 'login');
+  }
+
+  function closeAuthModal() {
+    const modal = document.getElementById('auth-modal');
+    modal.classList.remove('open');
+    document.body.style.overflow = '';
+    clearModalAlert();
+  }
+
+  function handleModalBackdropClick(e) {
+    if (e.target === document.getElementById('auth-modal')) {
+      closeAuthModal();
+    }
+  }
+
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeAuthModal();
+  });
+
+  function switchAuthTab(tab) {
+    clearModalAlert();
+    const loginForm = document.getElementById('modal-login-form');
+    const regForm = document.getElementById('modal-register-form');
+    const tabLoginBtn = document.getElementById('tab-btn-login');
+    const tabRegBtn = document.getElementById('tab-btn-register');
+    const title = document.getElementById('modal-title');
+    const subtitle = document.getElementById('modal-subtitle');
+
+    if (tab === 'register') {
+      loginForm.style.display = 'none';
+      regForm.style.display = 'block';
+      tabLoginBtn.classList.remove('active');
+      tabRegBtn.classList.add('active');
+      title.textContent = 'Create your account';
+      subtitle.textContent = 'Join in seconds — free forever, no card needed';
+      setTimeout(() => document.getElementById('m-reg-name').focus(), 50);
+    } else {
+      loginForm.style.display = 'block';
+      regForm.style.display = 'none';
+      tabLoginBtn.classList.add('active');
+      tabRegBtn.classList.remove('active');
+      title.textContent = 'Welcome back';
+      subtitle.textContent = 'Sign in to access your personal link workspace';
+      setTimeout(() => document.getElementById('m-login-email').focus(), 50);
+    }
+  }
+
+  function showModalAlert(message, type) {
+    const box = document.getElementById('modal-alert');
+    box.className = 'auth-alert ' + (type || 'error');
+    box.innerHTML = '<i class="bi ' + (type === 'success' ? 'bi-check-circle-fill' : 'bi-exclamation-circle-fill') + '"></i> ' + message;
+    box.style.display = 'flex';
+  }
+
+  function clearModalAlert() {
+    const box = document.getElementById('modal-alert');
+    box.style.display = 'none';
+    box.innerHTML = '';
+  }
+
+  function toggleModalPassword(inputId, btn) {
+    const input = document.getElementById(inputId);
+    const icon = btn.querySelector('i');
+    if (input.type === 'password') {
+      input.type = 'text';
+      icon.className = 'bi bi-eye-slash';
+    } else {
+      input.type = 'password';
+      icon.className = 'bi bi-eye';
+    }
+  }
+
+  function checkRegStrength(val) {
+    const fill = document.getElementById('m-reg-strength-fill');
+    if (!val) {
+      fill.style.width = '0%';
+      return;
+    }
+    let score = 0;
+    if (val.length >= 8) score++;
+    if (/[A-Z]/.test(val)) score++;
+    if (/[0-9]/.test(val)) score++;
+    if (/[^A-Za-z0-9]/.test(val)) score++;
+
+    if (score <= 1) {
+      fill.style.width = '25%';
+      fill.style.backgroundColor = '#ef4444';
+    } else if (score === 2) {
+      fill.style.width = '50%';
+      fill.style.backgroundColor = '#f59e0b';
+    } else if (score === 3) {
+      fill.style.width = '75%';
+      fill.style.backgroundColor = '#3b82f6';
+    } else {
+      fill.style.width = '100%';
+      fill.style.backgroundColor = '#10b981';
+    }
+  }
+
+  async function handleModalLogin(e) {
+    e.preventDefault();
+    clearModalAlert();
+    const btn = document.getElementById('btn-modal-login-submit');
+    const origHTML = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Signing in...';
+
+    const email = document.getElementById('m-login-email').value.trim();
+    const password = document.getElementById('m-login-password').value;
+    const remember = document.getElementById('m-login-remember').checked;
+
+    try {
+      const res = await fetch('/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: JSON.stringify({ email, password, remember })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        showModalAlert('Success! Redirecting to workspace...', 'success');
+        setTimeout(() => { window.location.href = data.redirect || '/'; }, 400);
+      } else {
+        showModalAlert(data.error || 'Invalid email or password.', 'error');
+        btn.disabled = false;
+        btn.innerHTML = origHTML;
+      }
+    } catch (err) {
+      showModalAlert('Network error occurred. Please try again.', 'error');
+      btn.disabled = false;
+      btn.innerHTML = origHTML;
+    }
+  }
+
+  async function handleModalRegister(e) {
+    e.preventDefault();
+    clearModalAlert();
+    const btn = document.getElementById('btn-modal-reg-submit');
+    const origHTML = btn.innerHTML;
+
+    const name = document.getElementById('m-reg-name').value.trim();
+    const email = document.getElementById('m-reg-email').value.trim();
+    const password = document.getElementById('m-reg-password').value;
+    const confirm = document.getElementById('m-reg-confirm').value;
+
+    if (password !== confirm) {
+      showModalAlert('Passwords do not match.', 'error');
+      return;
+    }
+    if (password.length < 8) {
+      showModalAlert('Password must be at least 8 characters.', 'error');
+      return;
+    }
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Creating account...';
+
+    try {
+      const res = await fetch('/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: JSON.stringify({ name, email, password, confirm_password: confirm })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        showModalAlert('Account created! Opening workspace...', 'success');
+        setTimeout(() => { window.location.href = data.redirect || '/'; }, 400);
+      } else {
+        showModalAlert(data.error || 'Failed to create account.', 'error');
+        btn.disabled = false;
+        btn.innerHTML = origHTML;
+      }
+    } catch (err) {
+      showModalAlert('Network error occurred. Please try again.', 'error');
+      btn.disabled = false;
+      btn.innerHTML = origHTML;
+    }
+  }
+
+
+</script>
+
+</body>
+</html>

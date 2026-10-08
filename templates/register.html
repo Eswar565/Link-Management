@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Create Account · LinkVault</title>
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='img/favicon.svg') }}" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 15px; }
+    body {
+      font-family: 'Inter', -apple-system, sans-serif;
+      background: #f1f5f9;
+      color: #0f172a;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      -webkit-font-smoothing: antialiased;
+    }
+    a { text-decoration: none; color: inherit; }
+
+    /* ── Shell ── */
+    .auth-shell {
+      width: 100%;
+      max-width: 960px;
+      display: flex;
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 25px 60px rgba(0,0,0,.18), 0 8px 20px rgba(0,0,0,.1);
+    }
+
+    /* ── Left panel ── */
+    .left-panel {
+      flex: 1;
+      background: linear-gradient(145deg, #1e1b4b 0%, #312e81 45%, #4338ca 100%);
+      padding: 52px 48px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .left-panel::before {
+      content: '';
+      position: absolute;
+      top: -60px; right: -60px;
+      width: 240px; height: 240px;
+      border-radius: 50%;
+      background: rgba(255,255,255,.06);
+    }
+
+    .left-panel::after {
+      content: '';
+      position: absolute;
+      bottom: -40px; left: -40px;
+      width: 180px; height: 180px;
+      border-radius: 50%;
+      background: rgba(255,255,255,.04);
+    }
+
+    .brand-mark {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      position: relative;
+      z-index: 1;
+      margin-bottom: 48px;
+    }
+
+    .brand-icon-lg {
+      width: 44px; height: 44px;
+      border-radius: 12px;
+      background: rgba(255,255,255,.15);
+      border: 1px solid rgba(255,255,255,.2);
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    .brand-icon-lg i { font-size: 20px; color: #fff; }
+    .brand-name-lg { font-size: 20px; font-weight: 800; color: #fff; letter-spacing: -0.4px; }
+
+    .hero-text { position: relative; z-index: 1; }
+
+    .hero-text h1 {
+      font-size: 30px;
+      font-weight: 800;
+      color: #fff;
+      line-height: 1.25;
+      letter-spacing: -0.7px;
+      margin-bottom: 14px;
+    }
+
+    .hero-text p {
+      font-size: 14.5px;
+      color: rgba(255,255,255,.65);
+      line-height: 1.6;
+      margin-bottom: 34px;
+    }
+
+    .steps { list-style: none; display: flex; flex-direction: column; gap: 14px; position: relative; z-index: 1; }
+
+    .step-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 13.5px;
+      color: rgba(255,255,255,.8);
+    }
+
+    .step-num {
+      width: 28px; height: 28px;
+      border-radius: 8px;
+      background: rgba(255,255,255,.12);
+      border: 1px solid rgba(255,255,255,.15);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 700;
+      color: #a5b4fc;
+      flex-shrink: 0;
+    }
+
+    .left-footer { font-size: 12px; color: rgba(255,255,255,.35); position: relative; z-index: 1; }
+
+    /* ── Right panel ── */
+    .right-panel {
+      width: 460px;
+      flex-shrink: 0;
+      background: #fff;
+      padding: 48px 48px 44px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .form-header { margin-bottom: 28px; }
+
+    .form-header h2 {
+      font-size: 23px;
+      font-weight: 800;
+      color: #0f172a;
+      letter-spacing: -0.5px;
+      margin-bottom: 5px;
+    }
+
+    .form-header p { font-size: 13.5px; color: #334155; font-weight: 450; }
+
+    /* Flash messages */
+    .flash-list { display: flex; flex-direction: column; gap: 7px; margin-bottom: 18px; }
+
+    .flash-item {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      padding: 9px 13px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    .flash-item.danger  { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
+    .flash-item.success { background: #f0fdf4; color: #16a34a; border: 1px solid #bbf7d0; }
+    .flash-item.info    { background: #eff6ff; color: #2563eb; border: 1px solid #bfdbfe; }
+
+    /* Fields */
+    .field { margin-bottom: 16px; }
+
+    .field label {
+      display: block;
+      font-size: 13px;
+      font-weight: 700;
+      color: #0f172a;
+      margin-bottom: 6px;
+    }
+
+    .field-wrap { position: relative; }
+
+    .field-wrap i {
+      position: absolute;
+      left: 13px; top: 50%;
+      transform: translateY(-50%);
+      color: #475569;
+      font-size: 14px;
+      pointer-events: none;
+    }
+
+    .field input {
+      width: 100%;
+      padding: 10px 13px 10px 38px;
+      border: 1.5px solid #cbd5e1;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 500;
+      font-family: inherit;
+      color: #0f172a;
+      background: #ffffff;
+      outline: none;
+      transition: border-color .15s, box-shadow .15s, background .15s;
+    }
+
+    .field input:focus {
+      border-color: #4f46e5;
+      background: #fff;
+      box-shadow: 0 0 0 3px rgba(79,70,229,.14);
+    }
+
+    .field input::placeholder { color: #64748b; }
+
+    /* Two-col row */
+    .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+    /* Password strength */
+    .pw-strength { margin-top: 6px; height: 3px; background: #e2e8f0; border-radius: 99px; overflow: hidden; }
+    .pw-bar { height: 100%; width: 0; border-radius: 99px; transition: width .25s, background .25s; }
+
+    /* Terms row */
+    .terms-row { display: flex; align-items: flex-start; gap: 9px; margin: 18px 0 22px; }
+    .terms-row input[type="checkbox"] { width: 15px; height: 15px; accent-color: #4f46e5; cursor: pointer; margin-top: 2px; flex-shrink: 0; }
+    .terms-row label { font-size: 13px; color: #334155; font-weight: 500; line-height: 1.5; cursor: pointer; }
+
+    /* Submit */
+    .btn-register {
+      width: 100%;
+      padding: 13px;
+      border-radius: 99px;
+      background: linear-gradient(135deg, #4f46e5, #7c3aed);
+      color: #fff;
+      font-size: 15px;
+      font-weight: 700;
+      border: none;
+      cursor: pointer;
+      transition: transform .15s, box-shadow .15s;
+      box-shadow: 0 4px 14px rgba(79,70,229,.4);
+      font-family: inherit;
+      letter-spacing: -.2px;
+    }
+
+    .btn-register:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(79,70,229,.5);
+    }
+    .btn-register:active { transform: translateY(0); }
+    .btn-register:disabled { opacity: .65; cursor: not-allowed; transform: none; }
+
+    .form-footer {
+      margin-top: 22px;
+      text-align: center;
+      font-size: 13px;
+      color: #475569;
+      font-weight: 500;
+    }
+
+    .form-footer a { color: #4338ca; font-weight: 700; }
+
+    @media (max-width: 700px) {
+      .auth-shell { flex-direction: column; max-width: 460px; }
+      .left-panel { padding: 32px; min-height: 180px; }
+      .left-panel .steps { display: none; }
+      .left-panel .hero-text h1 { font-size: 20px; }
+      .right-panel { width: 100%; padding: 36px 28px; }
+      .field-row { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="auth-shell">
+
+  <!-- Left branding panel -->
+  <div class="left-panel">
+    <div class="brand-mark">
+      <img src="{{ url_for('static', filename='img/logo.svg') }}" alt="LinkVault" width="36" height="36" style="border-radius:10px;box-shadow:0 6px 18px rgba(0,0,0,0.3);" />
+      <span class="brand-name-lg">Link<span style="color:#818cf8;">Vault</span></span>
+    </div>
+
+    <div class="hero-text">
+      <h1>Start organizing<br>your links today.</h1>
+      <p>Create a free account and get instant access to your personal link workspace.</p>
+
+      <ul class="steps">
+        <li class="step-item">
+          <div class="step-num">1</div>
+          Fill in your details and create an account
+        </li>
+        <li class="step-item">
+          <div class="step-num">2</div>
+          Sign in and land on your personal workspace
+        </li>
+        <li class="step-item">
+          <div class="step-num">3</div>
+          Start saving links with categories instantly
+        </li>
+      </ul>
+    </div>
+
+    <div class="left-footer">© 2026 LinkVault · All rights reserved</div>
+  </div>
+
+  <!-- Right form panel -->
+  <div class="right-panel">
+    <div class="form-header">
+      <h2>Create your account</h2>
+      <p>Free forever. No credit card required.</p>
+    </div>
+
+    <!-- Flash messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+      <div class="flash-list">
+        {% for cat, msg in messages %}
+        <div class="flash-item {{ cat }}">
+          <i class="bi bi-{{ 'exclamation-circle' if cat == 'danger' else 'check-circle' }}"></i>
+          {{ msg }}
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+    {% endwith %}
+
+    <form method="POST" action="{{ url_for('register') }}" id="register-form" novalidate>
+
+      <!-- Full name -->
+      <div class="field">
+        <label for="name">Full name</label>
+        <div class="field-wrap">
+          <i class="bi bi-person"></i>
+          <input type="text" id="name" name="name"
+                 value="{{ form.get('name', '') }}"
+                 placeholder="Jane Smith"
+                 maxlength="100"
+                 required autofocus autocomplete="name" />
+        </div>
+      </div>
+
+      <!-- Email -->
+      <div class="field">
+        <label for="email">Email address</label>
+        <div class="field-wrap">
+          <i class="bi bi-envelope"></i>
+          <input type="email" id="email" name="email"
+                 value="{{ form.get('email', '') }}"
+                 placeholder="jane@company.com"
+                 maxlength="200"
+                 required autocomplete="email" />
+        </div>
+      </div>
+
+      <!-- Password row -->
+      <div class="field-row">
+        <div class="field" style="margin-bottom:0;">
+          <label for="password">Password</label>
+          <div class="field-wrap">
+            <i class="bi bi-lock"></i>
+            <input type="password" id="password" name="password"
+                   placeholder="Min 8 characters"
+                   minlength="8"
+                   required autocomplete="new-password"
+                   oninput="updateStrength(this.value)" />
+          </div>
+          <div class="pw-strength" id="pw-strength-track">
+            <div class="pw-bar" id="pw-bar"></div>
+          </div>
+        </div>
+
+        <div class="field" style="margin-bottom:0;">
+          <label for="confirm_password">Confirm password</label>
+          <div class="field-wrap">
+            <i class="bi bi-lock-fill"></i>
+            <input type="password" id="confirm_password" name="confirm_password"
+                   placeholder="Re-enter password"
+                   required autocomplete="new-password" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Terms -->
+      <div class="terms-row">
+        <input type="checkbox" id="terms" name="terms" required />
+        <label for="terms">
+          I agree to LinkVault's Terms of Service and Privacy Policy.
+        </label>
+      </div>
+
+      <button type="submit" class="btn-register" id="btn-register">
+        Create my account
+      </button>
+
+    </form>
+
+    <div class="form-footer">
+      Already have an account?
+      <a href="{{ url_for('login') }}" id="link-to-login">Sign in →</a>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Password strength bar
+  function updateStrength(val) {
+    const bar = document.getElementById('pw-bar');
+    const len = val.length;
+    let pct = 0, color = '#ef4444';
+    if (len >= 8)  { pct = 33; color = '#f59e0b'; }
+    if (len >= 10 && /[A-Z]/.test(val)) { pct = 66; color = '#3b82f6'; }
+    if (len >= 12 && /[A-Z]/.test(val) && /[0-9]/.test(val) && /[^A-Za-z0-9]/.test(val)) {
+      pct = 100; color = '#10b981';
+    }
+    bar.style.width = pct + '%';
+    bar.style.background = color;
+  }
+
+  // Client-side confirm match highlight
+  document.getElementById('confirm_password').addEventListener('input', function() {
+    const pw = document.getElementById('password').value;
+    this.style.borderColor = this.value && this.value !== pw ? '#ef4444' : '';
+  });
+
+  // Disable submit on click to prevent double-submit
+  document.getElementById('register-form').addEventListener('submit', function(e) {
+    const terms = document.getElementById('terms');
+    if (!terms.checked) {
+      e.preventDefault();
+      terms.style.outline = '2px solid #ef4444';
+      terms.style.borderRadius = '3px';
+      return;
+    }
+    const pw  = document.getElementById('password').value;
+    const cpw = document.getElementById('confirm_password').value;
+    if (pw !== cpw) {
+      e.preventDefault();
+      document.getElementById('confirm_password').style.borderColor = '#ef4444';
+      return;
+    }
+    const btn = document.getElementById('btn-register');
+    btn.disabled = true;
+    btn.textContent = 'Creating account…';
+  });
+</script>
+</body>
+</html>

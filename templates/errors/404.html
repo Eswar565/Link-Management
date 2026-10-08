@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}404 · Not Found · LinkVault{% endblock %}
+{% block content %}
+<style>
+  .error-page { display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:calc(100vh - 62px);padding:40px 20px;text-align:center; }
+  .error-code { font-size:80px;font-weight:900;color:var(--border);letter-spacing:-4px;line-height:1;margin-bottom:6px; }
+  .error-title { font-size:22px;font-weight:800;color:var(--text);margin-bottom:10px; }
+  .error-sub { font-size:14.5px;color:var(--text-3);max-width:380px;line-height:1.6;margin-bottom:28px; }
+  .btn-home { display:inline-flex;align-items:center;gap:7px;padding:10px 22px;border-radius:8px;background:var(--accent);color:#fff;font-size:14px;font-weight:600;text-decoration:none;box-shadow:0 2px 8px rgba(79,70,229,.3);transition:background .15s; }
+  .btn-home:hover { background:var(--accent-hover); }
+</style>
+<div class="error-page">
+  <div class="error-code">404</div>
+  <div class="error-title">Page Not Found</div>
+  <div class="error-sub">The page you're looking for doesn't exist or has been moved. Check the URL and try again.</div>
+  <a href="{{ url_for('index') }}" class="btn-home" id="btn-back-404">
+    <i class="bi bi-arrow-left"></i> Back to my workspace
+  </a>
+</div>
+{% endblock %}

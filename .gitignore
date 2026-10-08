@@ -24,7 +24,9 @@ instance/
 
 # Environment variables
 .env
+.env*.local
 .flaskenv
+!.env.example
 
 # IDE
 .vscode/
@@ -36,7 +38,6 @@ instance/
 .DS_Store
 Thumbs.db
 
-.env
-venv/
-__pycache__/
-*.pyc
+# Temporary / Scratch
+scratch/
+*.tmp

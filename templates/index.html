@@ -1,189 +1,615 @@
 {% extends "base.html" %}
-{% block title %}Links · Beamer{% endblock %}
+{% block title %}My Links · LinkVault{% endblock %}
 
 {% set cat_colors = {
-  'Meetings':  '#3b82f6',
-  'YouTube':   '#ef4444',
-  'Study':     '#10b981',
-  'Work':      '#f59e0b',
-  'News':      '#06b6d4',
-  'Tools':     '#8b5cf6',
-  'Social':    '#ec4899',
-  'Other':     '#6b7280'
+  'Meetings':'#3b82f6','YouTube':'#ef4444','Study':'#10b981',
+  'Work':'#f59e0b','News':'#06b6d4','Tools':'#8b5cf6',
+  'Social':'#ec4899','Other':'#6b7280'
 } %}
-
 {% set cat_icons = {
-  'Meetings':  'bi-camera-video',
-  'YouTube':   'bi-youtube',
-  'Study':     'bi-book',
-  'Work':      'bi-briefcase',
-  'News':      'bi-newspaper',
-  'Tools':     'bi-wrench',
-  'Social':    'bi-people',
-  'Other':     'bi-three-dots'
+  'Meetings':'bi-camera-video','YouTube':'bi-youtube','Study':'bi-book',
+  'Work':'bi-briefcase','News':'bi-newspaper','Tools':'bi-wrench',
+  'Social':'bi-people','Other':'bi-three-dots'
 } %}
-
-<!-- ─── Topbar ─── -->
-{% block topbar %}
-<div class="topbar">
-  <span class="topbar-title">
-    {% if selected_category %}{{ selected_category }}{% else %}All Links{% endif %}
-  </span>
-  <span class="topbar-count">{{ links | length }}</span>
-
-  <form method="GET" action="{{ url_for('index') }}" id="search-form" class="search-wrap">
-    {% if selected_category %}<input type="hidden" name="category" value="{{ selected_category }}" />{% endif %}
-    <i class="bi bi-search"></i>
-    <input type="text" name="q" class="search-input" id="search-input"
-           placeholder="Search links…" value="{{ search_query }}" autocomplete="off" />
-  </form>
-
-  <a href="{{ url_for('add_link') }}" id="btn-topbar-new"
-     style="display:flex;align-items:center;gap:5px;padding:6px 11px;border-radius:5px;background:var(--accent);color:#fff;font-size:12.5px;font-weight:600;text-decoration:none;transition:background .12s;white-space:nowrap;">
-    <i class="bi bi-plus" style="font-size:14px;"></i> New Link
-  </a>
-</div>
-{% endblock %}
 
 {% block content %}
+<style>
+  /* ── Hero ── */
+  .hero {
+    text-align: center;
+    padding: 60px 32px 48px;
+    background: #ffffff;
+    border-bottom: 1px solid var(--border);
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 600px; height: 350px;
+    background: radial-gradient(ellipse at center, rgba(79,70,229,.06) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .hero-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 12.5px;
+    font-weight: 600;
+    letter-spacing: .04em;
+    color: var(--accent);
+    padding: 5px 14px;
+    background: #f5f3ff;
+    border: 1.5px solid #c7d2fe;
+    border-radius: 99px;
+    margin-bottom: 16px;
+    position: relative;
+    z-index: 1;
+  }
+  .hero-eyebrow .badge-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: #4f46e5;
+    animation: pulseDot 2s infinite;
+  }
+  @keyframes pulseDot {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50%       { opacity: .5; transform: scale(.8); }
+  }
+  .hero-title {
+    font-size: clamp(28px, 4.5vw, 42px);
+    font-weight: 800;
+    color: var(--text);
+    letter-spacing: -1px;
+    line-height: 1.15;
+    margin-bottom: 10px;
+    position: relative;
+    z-index: 1;
+  }
+  .hero-title span {
+    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .hero-subtitle {
+    font-size: 15px;
+    color: #334155;
+    font-weight: 450;
+    max-width: 540px;
+    margin: 0 auto;
+    position: relative;
+    z-index: 1;
+    line-height: 1.6;
+  }
 
-{% if links %}
-<!-- ─── Table view ─── -->
-<table style="width:100%;border-collapse:collapse;" id="links-table">
-  <thead>
-    <tr style="border-bottom:1px solid var(--border);">
-      <th style="padding:9px 20px;text-align:left;font-size:11.5px;font-weight:600;color:var(--text-3);letter-spacing:.04em;text-transform:uppercase;width:35%;">Title</th>
-      <th style="padding:9px 12px;text-align:left;font-size:11.5px;font-weight:600;color:var(--text-3);letter-spacing:.04em;text-transform:uppercase;width:30%;">URL</th>
-      <th style="padding:9px 12px;text-align:left;font-size:11.5px;font-weight:600;color:var(--text-3);letter-spacing:.04em;text-transform:uppercase;width:14%;">Category</th>
-      <th style="padding:9px 12px;text-align:left;font-size:11.5px;font-weight:600;color:var(--text-3);letter-spacing:.04em;text-transform:uppercase;width:14%;">Added</th>
-      <th style="padding:9px 12px;text-align:right;font-size:11.5px;font-weight:600;color:var(--text-3);letter-spacing:.04em;text-transform:uppercase;width:7%;"></th>
-    </tr>
-  </thead>
-  <tbody>
-    {% for link in links %}
-    <tr class="link-row" id="link-row-{{ link.id }}"
-        style="border-bottom:1px solid var(--border);transition:background .1s;">
-      <!-- Title -->
-      <td style="padding:11px 20px;">
-        <div style="display:flex;align-items:center;gap:10px;">
-          <div style="width:28px;height:28px;border-radius:6px;background:var(--bg-3);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-            <i class="bi {{ cat_icons.get(link.category, 'bi-link') }}"
-               style="font-size:12px;color:{{ cat_colors.get(link.category, '#6b7280') }}"></i>
-          </div>
-          <div>
-            <div style="font-size:13px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:260px;">
-              {{ link.title }}
-            </div>
-          </div>
-        </div>
-      </td>
+  /* ── Body layout ── */
+  .workspace { display: flex; gap: 0; min-height: calc(100vh - 62px - 180px); }
 
-      <!-- URL -->
-      <td style="padding:11px 12px;">
-        <a href="{{ link.url }}" target="_blank" rel="noopener noreferrer"
-           style="font-size:12px;color:var(--text-3);display:flex;align-items:center;gap:4px;transition:color .12s;max-width:230px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"
-           class="url-cell" id="url-{{ link.id }}">
-          {{ link.url | truncate(40, true, '…') }}
-          <i class="bi bi-arrow-up-right" style="font-size:10px;flex-shrink:0;opacity:0;" class="link-arrow"></i>
-        </a>
-      </td>
+  /* ── Category sidebar ── */
+  .cat-sidebar {
+    width: 215px;
+    flex-shrink: 0;
+    border-right: 1px solid var(--border);
+    padding: 24px 14px;
+    background: var(--bg-2);
+  }
 
-      <!-- Category -->
-      <td style="padding:11px 12px;">
-        <a href="{{ url_for('index', category=link.category) }}"
-           style="display:inline-flex;align-items:center;gap:5px;padding:2px 8px;border-radius:3px;font-size:11.5px;font-weight:500;color:{{ cat_colors.get(link.category, '#6b7280') }};background:{{ cat_colors.get(link.category, '#6b7280') }}1a;text-decoration:none;transition:background .12s;"
-           id="cat-badge-{{ link.id }}">
-          <span style="width:5px;height:5px;border-radius:50%;background:{{ cat_colors.get(link.category, '#6b7280') }};"></span>
-          {{ link.category }}
-        </a>
-      </td>
+  .cat-sidebar-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .09em;
+    color: #475569;
+    padding: 0 8px;
+    margin-bottom: 8px;
+  }
 
-      <!-- Date -->
-      <td style="padding:11px 12px;">
-        <span style="font-size:12px;color:var(--text-3);">
-          {{ link.created_at.strftime('%b %d, %Y') }}
-        </span>
-      </td>
+  .cat-item {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 9px 12px;
+    border-radius: 10px;
+    font-size: 13.5px;
+    font-weight: 600;
+    color: #334155;
+    transition: background .15s, color .15s;
+    text-decoration: none;
+    margin-bottom: 3px;
+  }
 
-      <!-- Actions -->
-      <td style="padding:11px 12px 11px 0;text-align:right;">
-        <div class="row-actions" style="display:flex;align-items:center;justify-content:flex-end;gap:2px;opacity:0;transition:opacity .12s;">
-          <a href="{{ link.url }}" target="_blank" rel="noopener noreferrer"
-             title="Open" id="open-{{ link.id }}"
-             style="display:flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:5px;color:var(--text-2);transition:background .1s,color .1s;">
-            <i class="bi bi-arrow-up-right" style="font-size:13px;"></i>
-          </a>
-          <a href="{{ url_for('edit_link', link_id=link.id) }}"
-             title="Edit" id="edit-{{ link.id }}"
-             style="display:flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:5px;color:var(--text-2);transition:background .1s,color .1s;">
-            <i class="bi bi-pencil" style="font-size:12px;"></i>
-          </a>
-          <button
-             title="Delete" id="delete-btn-{{ link.id }}"
-             data-id="{{ link.id }}" data-title="{{ link.title }}"
-             onclick="openDeleteDialog(this)"
-             style="display:flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:5px;color:var(--text-2);border:none;background:transparent;transition:background .1s,color .1s;">
-            <i class="bi bi-trash" style="font-size:12px;"></i>
-          </button>
-        </div>
-      </td>
-    </tr>
-    {% endfor %}
-  </tbody>
-</table>
+  .cat-item:hover { background: #f1f5f9; color: #0f172a; }
 
-{% else %}
-<!-- ─── Empty state ─── -->
-<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:calc(100vh - 52px);gap:12px;padding:40px;">
-  <div style="width:44px;height:44px;border-radius:10px;background:var(--bg-3);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;">
-    <i class="bi bi-link-45deg" style="font-size:20px;color:var(--text-3);"></i>
+  .cat-item.active {
+    background: #eef2ff;
+    color: var(--accent);
+    font-weight: 700;
+  }
+
+  .cat-item i { font-size: 13px; width: 16px; text-align: center; flex-shrink: 0; }
+
+  .cat-item .count {
+    margin-left: auto;
+    font-size: 11.5px;
+    font-weight: 700;
+    color: #334155;
+    background: #e2e8f0;
+    border-radius: 99px;
+    padding: 2px 8px;
+    min-width: 20px;
+    text-align: center;
+  }
+
+  .cat-item.active .count { background: rgba(79,70,229,.12); color: var(--accent); }
+
+  /* ── Main content ── */
+  .main-content { flex: 1; min-width: 0; background: #f8fafc; }
+
+  /* Search / filter bar */
+  .search-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 18px 28px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-2);
+    flex-wrap: wrap;
+  }
+
+  .search-wrap { position: relative; flex: 1; min-width: 220px; }
+  .search-wrap i { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: #475569; font-size: 14px; pointer-events: none; }
+
+  .search-input {
+    width: 100%;
+    padding: 10px 16px 10px 42px;
+    background: #ffffff;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 99px;
+    font-size: 14px;
+    font-family: var(--font);
+    color: #0f172a;
+    outline: none;
+    transition: border-color .15s, box-shadow .15s, background .15s;
+  }
+
+  .search-input:focus { border-color: var(--accent); background: #fff; box-shadow: 0 0 0 3px rgba(79,70,229,.14); }
+  .search-input::placeholder { color: #64748b; }
+
+  .search-cat-sel {
+    padding: 10px 34px 10px 16px;
+    background: #ffffff;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 99px;
+    font-size: 13.5px;
+    font-weight: 500;
+    font-family: var(--font);
+    color: #0f172a;
+    outline: none;
+    appearance: none;
+    cursor: pointer;
+    min-width: 155px;
+    transition: border-color .15s, background .15s;
+  }
+
+  .search-cat-sel:focus { border-color: var(--accent); background: #fff; }
+
+  .sel-wrap { position: relative; }
+  .sel-wrap i { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: #475569; font-size: 11px; pointer-events: none; }
+
+  .btn-search {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 10px 22px;
+    border-radius: 99px;
+    background: linear-gradient(135deg, #4f46e5, #7c3aed);
+    color: #fff;
+    font-size: 13.5px; font-weight: 700;
+    border: none; cursor: pointer;
+    transition: transform .15s, box-shadow .15s;
+    box-shadow: 0 4px 14px rgba(79,70,229,.35);
+    font-family: var(--font);
+    white-space: nowrap;
+  }
+
+  .btn-search:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(79,70,229,.45); }
+
+  .btn-clear-search {
+    font-size: 13.5px; color: #475569; font-weight: 600;
+    text-decoration: none; padding: 9px 4px;
+    transition: color .12s; white-space: nowrap;
+  }
+
+  .btn-clear-search:hover { color: var(--accent); }
+
+  /* Result count bar */
+  .results-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 24px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-3);
+  }
+
+  .results-count { font-size: 13px; color: #334155; font-weight: 600; }
+  .results-count strong { color: var(--text); }
+
+  /* ── Links table ── */
+  .links-table { width: 100%; border-collapse: collapse; }
+  .links-table thead tr { background: var(--bg-3); }
+  .links-table th {
+    padding: 10px 20px; text-align: left; font-size: 11px;
+    font-weight: 700; color: #334155; letter-spacing: .07em;
+    text-transform: uppercase; white-space: nowrap;
+    border-bottom: 1.5px solid var(--border);
+  }
+  .links-table tbody tr { border-bottom: 1px solid var(--border); transition: background .1s; }
+  .links-table tbody tr:last-child { border-bottom: none; }
+  .links-table tbody tr:hover { background: #fafbff; }
+  .links-table td { padding: 14px 20px; vertical-align: middle; }
+
+  .link-title-cell { display: flex; align-items: center; gap: 11px; }
+  .link-icon { width: 30px; height: 30px; border-radius: 8px; background: var(--bg-3); border: 1.5px solid var(--border); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .link-icon i { font-size: 13px; }
+  .link-title-text { font-size: 13.5px; font-weight: 600; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 240px; }
+
+  .link-url-a { display: inline-flex; align-items: center; gap: 4px; font-size: 12.5px; color: #475569; font-weight: 500; transition: color .12s; max-width: 210px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-decoration: none; }
+  .link-url-a:hover { color: var(--accent); }
+
+  .cat-badge { display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px; border-radius: 99px; font-size: 12px; font-weight: 600; white-space: nowrap; text-decoration: none; transition: opacity .12s; }
+  .cat-badge:hover { opacity: .8; }
+  .cat-badge-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+
+  .link-date { font-size: 12.5px; color: #475569; font-weight: 500; white-space: nowrap; }
+
+  .row-actions { display: flex; align-items: center; justify-content: flex-end; gap: 4px; opacity: 0; transition: opacity .12s; }
+  .links-table tbody tr:hover .row-actions { opacity: 1; }
+
+  .action-btn { display: flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 7px; color: #475569; transition: background .12s, color .12s; border: none; background: transparent; cursor: pointer; font-size: 13px; text-decoration: none; }
+  .action-btn:hover { background: var(--bg-4); color: var(--text); }
+  .action-btn.danger:hover { background: #fee2e2; color: var(--danger); }
+
+  /* ── Star / Pin ── */
+  .btn-star {
+    display: flex; align-items: center; justify-content: center;
+    width: 28px; height: 28px; border-radius: 7px;
+    border: none; background: transparent; cursor: pointer;
+    font-size: 14px; color: #64748b;
+    transition: color .12s, background .12s, transform .15s;
+    flex-shrink: 0;
+  }
+  .btn-star:hover { background: #fef9c3; color: #d97706; transform: scale(1.2); }
+  .btn-star.starred { color: #f59e0b; }
+  .btn-star.starred:hover { color: #d97706; }
+
+  .btn-pin {
+    display: flex; align-items: center; justify-content: center;
+    width: 28px; height: 28px; border-radius: 7px;
+    border: none; background: transparent; cursor: pointer;
+    font-size: 13px; color: #64748b;
+    transition: color .12s, background .12s, transform .15s;
+    flex-shrink: 0;
+  }
+  .btn-pin:hover { background: #eef2ff; color: #4f46e5; transform: scale(1.15); }
+  .btn-pin.pinned { color: #4f46e5; }
+  .btn-pin.pinned:hover { color: #4338ca; }
+
+  /* ── Pinned section ── */
+  .pinned-section {
+    border-bottom: 1.5px solid var(--border);
+    background: #fefce8;
+  }
+  .pinned-header {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 20px 6px;
+    font-size: 11px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .09em; color: #92400e;
+  }
+  .pinned-header i { font-size: 12px; color: #d97706; }
+  .pinned-row td { background: transparent; }
+  .pinned-row .link-title-text { font-weight: 700; }
+
+  /* ── Empty state ── */
+  .empty-state { padding: 60px 32px; text-align: center; }
+  .empty-icon { width: 54px; height: 54px; border-radius: 14px; background: var(--bg-3); border: 1.5px solid var(--border-2); display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; }
+  .empty-icon i { font-size: 22px; color: #475569; }
+  .empty-title { font-size: 17px; font-weight: 700; color: #0f172a; margin-bottom: 8px; }
+  .empty-sub { font-size: 13.5px; color: #475569; font-weight: 500; margin-bottom: 22px; }
+  .empty-sub a { color: var(--accent); text-decoration: none; font-weight: 600; }
+
+  /* ── Delete dialog ── */
+  .dialog-overlay { display: none; position: fixed; inset: 0; background: rgba(15,23,42,.35); z-index: 1000; backdrop-filter: blur(3px); }
+  .dialog-box { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 1001; background: var(--bg-2); border: 1.5px solid var(--border); border-radius: 14px; padding: 26px; width: 380px; box-shadow: var(--shadow-lg); }
+  .dialog-icon { width: 42px; height: 42px; border-radius: 10px; background: #fee2e2; border: 1.5px solid #fecaca; display: flex; align-items: center; justify-content: center; margin-bottom: 14px; }
+  .dialog-icon i { font-size: 17px; color: var(--danger); }
+  .dialog-title { font-size: 15.5px; font-weight: 700; color: #0f172a; margin-bottom: 6px; }
+  .dialog-sub { font-size: 13.5px; color: #334155; margin-bottom: 22px; line-height: 1.5; font-weight: 450; }
+  .dialog-sub strong { color: #0f172a; }
+  .dialog-actions { display: flex; gap: 10px; justify-content: flex-end; }
+  .btn-dc { padding: 9px 16px; border-radius: 7px; background: transparent; border: 1.5px solid #cbd5e1; color: #334155; font-size: 13.5px; font-weight: 600; cursor: pointer; font-family: var(--font); transition: background .12s; }
+  .btn-dc:hover { background: var(--bg-3); }
+  .btn-dd { padding: 9px 16px; border-radius: 7px; background: var(--danger); border: none; color: #fff; font-size: 13.5px; font-weight: 600; cursor: pointer; font-family: var(--font); transition: background .12s; }
+  .btn-dd:hover { background: #dc2626; }
+
+  @media (max-width: 768px) {
+    .cat-sidebar { display: none; }
+    .search-bar { padding: 12px 16px; }
+    .links-table th:nth-child(3), .links-table td:nth-child(3),
+    .links-table th:nth-child(4), .links-table td:nth-child(4) { display: none; }
+  }
+</style>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="hero-eyebrow">
+    <span class="badge-dot"></span>
+    <i class="bi bi-folder2-open"></i>
+    {% if selected_category %}{{ selected_category | upper }} COLLECTION
+    {% elif search_query %}SEARCH RESULTS
+    {% else %}PERSONAL WORKSPACE{% endif %}
   </div>
-  <div style="text-align:center;">
-    <div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:4px;">
-      {% if search_query %}No results for "{{ search_query }}"{% else %}No links yet{% endif %}
+  <h1 class="hero-title">
+    {% if selected_category %}{{ selected_category }} <span>links</span>
+    {% elif search_query %}Results for <span>"{{ search_query }}"</span>
+    {% else %}Your saved links, <span>beautifully organized</span>{% endif %}
+  </h1>
+  <p class="hero-subtitle">Fast search, smart categories, and one-click access to all your saved resources.</p>
+</section>
+
+<!-- Workspace layout -->
+<div class="workspace">
+
+  <!-- Category sidebar -->
+  <aside class="cat-sidebar">
+    <div class="cat-sidebar-label">Categories</div>
+    <a href="{{ url_for('index') }}"
+       class="cat-item {{ 'active' if not selected_category and not search_query }}"
+       id="cat-all">
+      <i class="bi bi-grid-3x3-gap"></i>
+      All links
+      <span class="count">{{ total }}</span>
+    </a>
+    {% for cat in categories %}
+    <a href="{{ url_for('index', category=cat) }}"
+       class="cat-item {{ 'active' if selected_category == cat }}"
+       id="cat-{{ cat | lower }}">
+      <i class="bi {{ cat_icons.get(cat, 'bi-tag') }}"
+         style="color:{{ cat_colors.get(cat, '#6b7280') }}"></i>
+      {{ cat }}
+      <span class="count">{{ category_counts.get(cat, 0) }}</span>
+    </a>
+    {% endfor %}
+
+    <div class="cat-sidebar-label" style="margin-top: 24px; display: flex; justify-content: space-between; align-items: center;">
+      <span>Team Workspaces</span>
+      <a href="{{ url_for('teams_list') }}" style="font-size: 11px; color: #4f46e5; text-decoration: none; font-weight: 700;" title="Manage teams">+ Manage</a>
     </div>
-    <div style="font-size:13px;color:var(--text-3);">
-      {% if search_query %}
-        Try a different search term or
-        <a href="{{ url_for('index') }}" style="color:var(--accent);">clear filters</a>.
-      {% else %}
-        Add your first link to get started.
+    {% if user_teams %}
+      {% for t in user_teams %}
+      <a href="{{ url_for('team_workspace', team_id=t.id) }}" class="cat-item" style="font-size: 13px;" title="{{ t.name }} ({{ t.member_count }} members, {{ t.link_count }} links)">
+        <i class="bi bi-people-fill" style="color: #4f46e5;"></i>
+        <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ t.name }}</span>
+        <span class="count" title="{{ t.link_count }} links">{{ t.link_count }}</span>
+      </a>
+      {% endfor %}
+    {% else %}
+      <a href="{{ url_for('teams_list') }}" class="cat-item" style="font-size: 12px; color: #64748b;">
+        <i class="bi bi-plus-circle"></i> Create or Join Team
+      </a>
+    {% endif %}
+  </aside>
+
+  <!-- Main content -->
+  <div class="main-content">
+
+    <!-- Search bar -->
+    <div class="search-bar">
+      <form method="GET" action="{{ url_for('index') }}" id="search-form" style="display:contents;">
+        <div class="search-wrap">
+          <i class="bi bi-search"></i>
+          <input type="text" name="q" id="search-input" class="search-input"
+                 placeholder="Search by title or URL…"
+                 value="{{ search_query }}" autocomplete="off" />
+        </div>
+        <div class="sel-wrap">
+          <select name="category" id="cat-select" class="search-cat-sel"
+                  onchange="document.getElementById('search-form').submit()">
+            <option value="">All categories</option>
+            {% for cat in categories %}
+            <option value="{{ cat }}" {{ 'selected' if selected_category == cat }}>{{ cat }}</option>
+            {% endfor %}
+          </select>
+          <i class="bi bi-chevron-down"></i>
+        </div>
+        <button type="submit" class="btn-search" id="btn-search-submit">
+          <i class="bi bi-search"></i> Search
+        </button>
+        {% if search_query or selected_category %}
+        <a href="{{ url_for('index') }}" class="btn-clear-search" id="btn-clear">Reset</a>
+        {% endif %}
+      </form>
+    </div>
+
+    <!-- Results count -->
+    <div class="results-bar">
+      <span class="results-count">
+        <strong>{{ links | length }}</strong> link{{ 's' if links | length != 1 else '' }}
+        {% if selected_category %} in <strong>{{ selected_category }}</strong>{% endif %}
+        {% if search_query %} matching "<strong>{{ search_query }}</strong>"{% endif %}
+      </span>
+      <a href="{{ url_for('add_link') }}" class="btn-search" style="font-size:13px;padding:7px 14px;" id="btn-results-add">
+        <i class="bi bi-plus"></i> Add link
+      </a>
+    </div>
+
+    <!-- Pinned links section -->
+    {% if pinned_links %}
+    <div class="pinned-section">
+      <div class="pinned-header">
+        <i class="bi bi-pin-angle-fill"></i> Pinned
+      </div>
+      <table class="links-table">
+        <tbody>
+          {% for link in pinned_links %}
+          <tr id="link-row-{{ link.id }}" class="pinned-row">
+            <td style="width:32%">
+              <div class="link-title-cell">
+                <button class="btn-star {{ 'starred' if link.is_starred }}" id="star-{{ link.id }}"
+                        onclick="toggleStar({{ link.id }})" title="{{ 'Unstar' if link.is_starred else 'Star' }}">
+                  <i class="bi {{ 'bi-star-fill' if link.is_starred else 'bi-star' }}"></i>
+                </button>
+                <div class="link-icon">
+                  <i class="bi {{ cat_icons.get(link.category, 'bi-link') }}"
+                     style="color:{{ cat_colors.get(link.category, '#6b7280') }}"></i>
+                </div>
+                <span class="link-title-text" title="{{ link.title }}">{{ link.title }}</span>
+              </div>
+            </td>
+            <td style="width:28%">
+              <a href="{{ link.url }}" target="_blank" rel="noopener noreferrer"
+                 class="link-url-a" title="{{ link.url }}">
+                {{ link.url | truncate(36, true, '…') }}
+                <i class="bi bi-arrow-up-right" style="font-size:10px;flex-shrink:0;"></i>
+              </a>
+            </td>
+            <td style="width:16%">
+              <span class="cat-badge"
+                    style="color:{{ cat_colors.get(link.category,'#6b7280') }};background:{{ cat_colors.get(link.category,'#6b7280') }}1a;">
+                <span class="cat-badge-dot" style="background:{{ cat_colors.get(link.category,'#6b7280') }};"></span>
+                {{ link.category }}
+              </span>
+            </td>
+            <td style="width:13%"><span class="link-date">{{ link.created_at.strftime('%b %d, %Y') }}</span></td>
+            <td style="width:11%">
+              <div class="row-actions">
+                <a href="{{ link.url }}" target="_blank" rel="noopener noreferrer"
+                   class="action-btn" title="Open"><i class="bi bi-arrow-up-right"></i></a>
+                <a href="{{ url_for('edit_link', link_id=link.id) }}"
+                   class="action-btn" title="Edit"><i class="bi bi-pencil"></i></a>
+                <button class="btn-pin pinned" id="pin-{{ link.id }}"
+                        onclick="togglePin({{ link.id }})" title="Unpin">
+                  <i class="bi bi-pin-fill"></i>
+                </button>
+                <button class="action-btn danger" data-id="{{ link.id }}" data-title="{{ link.title }}"
+                        onclick="openDeleteDialog(this)"><i class="bi bi-trash"></i></button>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
+
+    <!-- Regular links table -->
+    {% if links %}
+    <table class="links-table" id="links-table">
+      <thead>
+        <tr>
+          <th style="width:32%">Title</th>
+          <th style="width:28%">URL</th>
+          <th style="width:16%">Category</th>
+          <th style="width:13%">Date Added</th>
+          <th style="width:11%"></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for link in links %}
+        <tr id="link-row-{{ link.id }}">
+          <td>
+            <div class="link-title-cell">
+              <button class="btn-star {{ 'starred' if link.is_starred }}" id="star-{{ link.id }}"
+                      onclick="toggleStar({{ link.id }})" title="{{ 'Unstar' if link.is_starred else 'Star' }}">
+                <i class="bi {{ 'bi-star-fill' if link.is_starred else 'bi-star' }}"></i>
+              </button>
+              <div class="link-icon">
+                <i class="bi {{ cat_icons.get(link.category, 'bi-link') }}"
+                   style="color:{{ cat_colors.get(link.category, '#6b7280') }}"></i>
+              </div>
+              <span class="link-title-text" title="{{ link.title }}">{{ link.title }}</span>
+            </div>
+          </td>
+          <td>
+            <a href="{{ link.url }}" target="_blank" rel="noopener noreferrer"
+               class="link-url-a" title="{{ link.url }}" id="url-{{ link.id }}">
+              {{ link.url | truncate(36, true, '…') }}
+              <i class="bi bi-arrow-up-right" style="font-size:10px;flex-shrink:0;"></i>
+            </a>
+          </td>
+          <td>
+            <a href="{{ url_for('index', category=link.category) }}"
+               class="cat-badge"
+               style="color:{{ cat_colors.get(link.category,'#6b7280') }};background:{{ cat_colors.get(link.category,'#6b7280') }}1a;"
+               id="cat-{{ link.id }}">
+              <span class="cat-badge-dot" style="background:{{ cat_colors.get(link.category,'#6b7280') }};"></span>
+              {{ link.category }}
+            </a>
+          </td>
+          <td><span class="link-date">{{ link.created_at.strftime('%b %d, %Y') }}</span></td>
+          <td>
+            <div class="row-actions">
+              <a href="{{ link.url }}" target="_blank" rel="noopener noreferrer"
+                 class="action-btn" title="Open" id="open-{{ link.id }}">
+                <i class="bi bi-arrow-up-right"></i>
+              </a>
+              <a href="{{ url_for('edit_link', link_id=link.id) }}"
+                 class="action-btn" title="Edit" id="edit-{{ link.id }}">
+                <i class="bi bi-pencil"></i>
+              </a>
+              <button class="btn-pin {{ 'pinned' if link.is_pinned }}" id="pin-{{ link.id }}"
+                      onclick="togglePin({{ link.id }})" title="{{ 'Unpin' if link.is_pinned else 'Pin to top' }}">
+                <i class="bi {{ 'bi-pin-fill' if link.is_pinned else 'bi-pin' }}"></i>
+              </button>
+              <button class="action-btn danger" title="Delete" id="del-btn-{{ link.id }}"
+                      data-id="{{ link.id }}" data-title="{{ link.title }}"
+                      onclick="openDeleteDialog(this)">
+                <i class="bi bi-trash"></i>
+              </button>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    {% else %}
+    <div class="empty-state" id="empty-state">
+      <div class="empty-icon"><i class="bi bi-link-45deg"></i></div>
+      <div class="empty-title">
+        {% if search_query %}No results for "{{ search_query }}"
+        {% elif selected_category %}No links in {{ selected_category }}
+        {% else %}Your workspace is empty{% endif %}
+      </div>
+      <div class="empty-sub">
+        {% if search_query or selected_category %}
+          Try another search or <a href="{{ url_for('index') }}">clear filters</a>.
+        {% else %}
+          Save your first link to start building your collection.
+        {% endif %}
+      </div>
+      {% if not search_query and not selected_category %}
+      <a href="{{ url_for('add_link') }}" class="btn-search" id="btn-empty-add" style="display:inline-flex;">
+        <i class="bi bi-plus"></i> Save first link
+      </a>
       {% endif %}
     </div>
-  </div>
-  {% if not search_query %}
-  <a href="{{ url_for('add_link') }}" id="btn-empty-add"
-     style="margin-top:4px;display:inline-flex;align-items:center;gap:5px;padding:7px 14px;border-radius:5px;background:var(--accent);color:#fff;font-size:13px;font-weight:600;text-decoration:none;transition:background .12s;">
-    <i class="bi bi-plus"></i> Add Link
-  </a>
-  {% endif %}
-</div>
-{% endif %}
+    {% endif %}
 
-<!-- ─── Delete dialog ─── -->
-<div id="delete-overlay"
-     style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:1000;backdrop-filter:blur(2px);"
-     onclick="closeDeleteDialog()">
-</div>
+  </div><!-- /main-content -->
+</div><!-- /workspace -->
 
-<div id="delete-dialog"
-     style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:1001;
-            background:var(--bg-2);border:1px solid var(--border-2);border-radius:10px;
-            padding:20px;width:340px;box-shadow:0 8px 40px rgba(0,0,0,.6);">
-  <div style="font-size:13.5px;font-weight:600;color:var(--text);margin-bottom:6px;">Delete link?</div>
-  <div style="font-size:13px;color:var(--text-2);margin-bottom:18px;">
-    <strong id="dialog-title" style="color:var(--text);"></strong> will be permanently removed.
-  </div>
-  <div style="display:flex;gap:8px;justify-content:flex-end;">
-    <button onclick="closeDeleteDialog()"
-            style="padding:6px 14px;border-radius:5px;background:var(--bg-3);border:1px solid var(--border-2);color:var(--text-2);font-size:13px;font-family:var(--font);cursor:pointer;transition:background .12s;">
-      Cancel
-    </button>
-    <form id="delete-form" method="POST" style="margin:0;">
-      <button type="submit" id="confirm-delete"
-              style="padding:6px 14px;border-radius:5px;background:#991b1b;border:none;color:#fff;font-size:13px;font-weight:600;font-family:var(--font);cursor:pointer;transition:background .12s;">
-        Delete
-      </button>
+<!-- Delete dialog -->
+<div class="dialog-overlay" id="del-overlay" onclick="closeDel()"></div>
+<div class="dialog-box" id="del-dialog">
+  <div class="dialog-icon"><i class="bi bi-trash3"></i></div>
+  <div class="dialog-title">Delete this link?</div>
+  <div class="dialog-sub"><strong id="del-title"></strong> will be permanently removed.</div>
+  <div class="dialog-actions">
+    <button class="btn-dc" onclick="closeDel()" id="btn-cancel-del">Cancel</button>
+    <form id="del-form" method="POST" style="margin:0;">
+      <button type="submit" class="btn-dd" id="confirm-del">Delete</button>
     </form>
   </div>
 </div>
@@ -191,27 +617,59 @@
 {% endblock %}
 
 {% block scripts %}
-<style>
-  .link-row:hover { background: var(--bg-2) !important; }
-  .link-row:hover .row-actions { opacity: 1 !important; }
-  .link-row:hover .url-cell { color: var(--text-2) !important; }
-  .row-actions a:hover, .row-actions button:hover { background: var(--bg-4) !important; color: var(--text) !important; }
-</style>
 <script>
-  // Delete dialog
   function openDeleteDialog(btn) {
-    document.getElementById('dialog-title').textContent = btn.dataset.title;
-    document.getElementById('delete-form').action = '/delete/' + btn.dataset.id;
-    document.getElementById('delete-overlay').style.display = 'block';
-    document.getElementById('delete-dialog').style.display = 'block';
+    document.getElementById('del-title').textContent = btn.dataset.title;
+    document.getElementById('del-form').action = '/delete/' + btn.dataset.id;
+    document.getElementById('del-overlay').style.display = 'block';
+    document.getElementById('del-dialog').style.display = 'block';
+  }
+  function closeDel() {
+    document.getElementById('del-overlay').style.display = 'none';
+    document.getElementById('del-dialog').style.display = 'none';
+  }
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeDel();
+  });
+
+  // ── Star toggle (no page reload) ────────────────────────────────────────────
+  async function toggleStar(id) {
+    const btn = document.getElementById('star-' + id);
+    if (!btn) return;
+    try {
+      const res = await fetch('/star/' + id, { method: 'POST' });
+      const data = await res.json();
+      const icon = btn.querySelector('i');
+      if (data.starred) {
+        btn.classList.add('starred');
+        icon.className = 'bi bi-star-fill';
+        btn.title = 'Unstar';
+      } else {
+        btn.classList.remove('starred');
+        icon.className = 'bi bi-star';
+        btn.title = 'Star';
+      }
+      // Brief pop animation
+      btn.style.transform = 'scale(1.4)';
+      setTimeout(function() { btn.style.transform = ''; }, 180);
+    } catch(e) { console.error('Star toggle failed', e); }
   }
 
-  function closeDeleteDialog() {
-    document.getElementById('delete-overlay').style.display = 'none';
-    document.getElementById('delete-dialog').style.display = 'none';
+  // ── Pin toggle (reloads to reorder sections) ─────────────────────────────────
+  async function togglePin(id) {
+    const btn = document.getElementById('pin-' + id);
+    if (btn) {
+      btn.style.transform = 'scale(1.35)';
+      btn.disabled = true;
+    }
+    try {
+      await fetch('/pin/' + id, { method: 'POST' });
+      // Reload so pinned section re-renders correctly
+      window.location.reload();
+    } catch(e) { console.error('Pin toggle failed', e); }
   }
 
-  // Debounce search
+  // Debounced search
   const si = document.getElementById('search-input');
   if (si) {
     let t;
@@ -219,8 +677,9 @@
       clearTimeout(t);
       t = setTimeout(function() {
         document.getElementById('search-form').submit();
-      }, 380);
+      }, 420);
     });
   }
 </script>
 {% endblock %}
+

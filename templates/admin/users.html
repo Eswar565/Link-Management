@@ -1,0 +1,176 @@
+{% extends "admin/base.html" %}
+{% block page_title %}Users{% endblock %}
+
+{% block content %}
+<style>
+  .user-row-meta { display: flex; align-items: center; gap: 10px; }
+  .avatar-xs { width: 30px; height: 30px; border-radius: 50%; background: linear-gradient(135deg, #6366f1, #7c3aed); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: #fff; flex-shrink: 0; }
+  .row-actions { display: flex; align-items: center; gap: 4px; justify-content: flex-end; opacity: 0; transition: opacity .12s; }
+  .data-table tbody tr:hover .row-actions { opacity: 1; }
+  .inactive-row td { opacity: .6; }
+</style>
+
+<!-- Page header -->
+<div class="page-header">
+  <div class="page-header-text">
+    <h1>User Management</h1>
+    <p>Create accounts, assign roles, and manage user access.</p>
+  </div>
+  <div class="page-header-actions">
+    <a href="{{ url_for('admin_create_user') }}" class="btn btn-primary" id="btn-create-user">
+      <i class="bi bi-person-plus"></i> Create User
+    </a>
+  </div>
+</div>
+
+<!-- Users card -->
+<div class="section-card">
+
+  <!-- Filter bar -->
+  <div class="filter-bar">
+    <form method="GET" action="{{ url_for('admin_users') }}" id="user-filter-form" style="display:contents;">
+      <input type="text" name="q" class="filter-input" id="user-search"
+             placeholder="Search by name or email…" value="{{ search }}" />
+      <select name="role" class="filter-select" id="role-filter"
+              onchange="document.getElementById('user-filter-form').submit()">
+        <option value="">All roles</option>
+        <option value="user"  {{ 'selected' if role_filter == 'user' }}>Members</option>
+        <option value="admin" {{ 'selected' if role_filter == 'admin' }}>Admins</option>
+      </select>
+      <button type="submit" class="btn btn-ghost btn-sm">
+        <i class="bi bi-search"></i> Search
+      </button>
+      {% if search or role_filter %}
+      <a href="{{ url_for('admin_users') }}" class="btn btn-ghost btn-sm" id="btn-clear-filter">
+        <i class="bi bi-x"></i> Clear
+      </a>
+      {% endif %}
+    </form>
+    <span style="margin-left:auto;font-size:12.5px;color:var(--text-3);">
+      {{ users | length }} user{{ 's' if users | length != 1 }}
+    </span>
+  </div>
+
+  <!-- Table -->
+  {% if users %}
+  <table class="data-table" id="users-table">
+    <thead>
+      <tr>
+        <th style="width:30%">User</th>
+        <th style="width:12%">Role</th>
+        <th style="width:10%">Links</th>
+        <th style="width:12%">Status</th>
+        <th style="width:16%">Joined</th>
+        <th style="width:20%"></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for u in users %}
+      <tr class="{{ 'inactive-row' if not u.is_active }}" id="user-row-{{ u.id }}">
+        <td>
+          <div class="user-row-meta">
+            <div class="avatar-xs">{{ u.initials }}</div>
+            <div>
+              <div style="font-size:13.5px;font-weight:600;color:var(--text);">{{ u.name }}</div>
+              <div style="font-size:12px;color:#475569;font-weight:500;">{{ u.email }}</div>
+            </div>
+          </div>
+        </td>
+        <td><span class="badge badge-{{ u.role }}">{{ u.role | capitalize }}</span></td>
+        <td>
+          <a href="{{ url_for('admin_links', user_id=u.id) }}"
+             style="font-weight:700;color:var(--text);font-size:14px;text-decoration:none;transition:color .12s;"
+             onmouseover="this.style.color='#4f46e5'" onmouseout="this.style.color=''"
+             title="View {{ u.name }}'s links">
+            {{ u.link_count }}
+          </a>
+        </td>
+        <td>
+          <span class="badge {{ 'badge-active' if u.is_active else 'badge-inactive' }}">
+            <i class="bi bi-{{ 'check-circle' if u.is_active else 'x-circle' }}" style="font-size:10px;"></i>
+            {{ 'Active' if u.is_active else 'Inactive' }}
+          </span>
+        </td>
+        <td style="font-size:12.5px;color:#475569;font-weight:500;">
+          {{ u.created_at.strftime('%b %d, %Y') }}
+        </td>
+        <td>
+          <div class="row-actions">
+            <a href="{{ url_for('admin_edit_user', user_id=u.id) }}"
+               class="action-icon" title="Edit user" id="edit-user-{{ u.id }}">
+              <i class="bi bi-pencil" style="font-size:13px;"></i>
+            </a>
+
+            {% if u.id != current_user.id %}
+            <button class="action-icon {{ 'red' if u.is_active else 'green' }}"
+                    title="{{ 'Deactivate' if u.is_active else 'Activate' }}"
+                    id="toggle-user-{{ u.id }}"
+                    onclick="openConfirmDialog(
+                      '{{ 'Deactivate' if u.is_active else 'Activate' }} user?',
+                      '{{ u.name }} will be {{ 'unable to sign in' if u.is_active else 're-enabled' }}.',
+                      '{{ url_for('admin_toggle_user', user_id=u.id) }}',
+                      '{{ 'Deactivate' if u.is_active else 'Activate' }}'
+                    )">
+              <i class="bi bi-{{ 'slash-circle' if u.is_active else 'check-circle' }}" style="font-size:13px;"></i>
+            </button>
+
+            <button class="action-icon red"
+                    title="Delete user"
+                    id="delete-user-{{ u.id }}"
+                    onclick="openConfirmDialog(
+                      'Delete user?',
+                      '<strong>{{ u.name }}</strong> and all {{ u.link_count }} of their links will be permanently deleted.',
+                      '{{ url_for('admin_delete_user', user_id=u.id) }}',
+                      'Delete permanently'
+                    )">
+              <i class="bi bi-trash" style="font-size:13px;"></i>
+            </button>
+            {% else %}
+            <span style="font-size:11.5px;color:var(--text-3);padding:0 6px;">(you)</span>
+            {% endif %}
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  {% else %}
+  <div class="empty-state">
+    <div class="empty-state-icon"><i class="bi bi-people"></i></div>
+    <h3>
+      {% if search or role_filter %}No users match your filters{% else %}No users yet{% endif %}
+    </h3>
+    <p>
+      {% if search or role_filter %}
+        Try a different search term or <a href="{{ url_for('admin_users') }}" style="color:#4f46e5;">clear filters</a>.
+      {% else %}
+        Create the first user account to get your team started.
+      {% endif %}
+    </p>
+    {% if not search and not role_filter %}
+    <a href="{{ url_for('admin_create_user') }}" class="btn btn-primary">
+      <i class="bi bi-person-plus"></i> Create First User
+    </a>
+    {% endif %}
+  </div>
+  {% endif %}
+
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const si = document.getElementById('user-search');
+  if (si) {
+    let t;
+    si.addEventListener('input', function() {
+      clearTimeout(t);
+      t = setTimeout(function() {
+        document.getElementById('user-filter-form').submit();
+      }, 420);
+    });
+  }
+</script>
+{% endblock %}
