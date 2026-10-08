@@ -93,8 +93,103 @@
     width: 215px;
     flex-shrink: 0;
     border-right: 1px solid var(--border);
-    padding: 24px 14px;
+    padding: 20px 14px;
     background: var(--bg-2);
+  }
+
+  /* ── Team Workspace Prominent Button (Above Categories) ── */
+  .team-nav-box {
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1.5px solid var(--border);
+  }
+
+  .btn-team-workspace {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 11px 12px;
+    background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
+    color: #ffffff !important;
+    border-radius: 12px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 13px;
+    box-shadow: 0 4px 14px rgba(79,70,229,.28);
+    transition: transform .15s, box-shadow .15s, filter .15s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn-team-workspace::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,.18) 0%, transparent 100%);
+    pointer-events: none;
+  }
+
+  .btn-team-workspace:hover {
+    transform: translateY(-1.5px);
+    box-shadow: 0 6px 20px rgba(79,70,229,.42);
+    filter: brightness(1.05);
+    color: #ffffff !important;
+  }
+
+  .btn-team-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 9px;
+    background: rgba(255,255,255,.22);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .btn-team-icon i {
+    font-size: 15px;
+    color: #ffffff;
+  }
+
+  .btn-team-info {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    flex: 1;
+    line-height: 1.25;
+  }
+
+  .btn-team-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: #ffffff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    letter-spacing: -0.2px;
+  }
+
+  .btn-team-sub {
+    font-size: 10.5px;
+    color: rgba(255,255,255,.82);
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-top: 2px;
+  }
+
+  .btn-team-arrow {
+    font-size: 12px;
+    color: rgba(255,255,255,.75);
+    margin-left: auto;
+    transition: transform .15s;
+  }
+
+  .btn-team-workspace:hover .btn-team-arrow {
+    transform: translateX(2px);
+    color: #ffffff;
   }
 
   .cat-sidebar-label {
@@ -388,6 +483,20 @@
 
   <!-- Category sidebar -->
   <aside class="cat-sidebar">
+    <!-- Team Workspace button above categories section -->
+    <div class="team-nav-box">
+      <a href="{{ url_for('teams_list') }}" class="btn-team-workspace" id="btn-team-workspace" title="Team Workspaces">
+        <div class="btn-team-icon">
+          <i class="bi bi-people-fill"></i>
+        </div>
+        <div class="btn-team-info">
+          <span class="btn-team-title">Team Workspace</span>
+          <span class="btn-team-sub">{% if user_teams %}{{ user_teams | length }} active team{{ 's' if user_teams | length != 1 }}{% else %}Collaborate &amp; share{% endif %}</span>
+        </div>
+        <i class="bi bi-chevron-right btn-team-arrow"></i>
+      </a>
+    </div>
+
     <div class="cat-sidebar-label">Categories</div>
     <a href="{{ url_for('index') }}"
        class="cat-item {{ 'active' if not selected_category and not search_query }}"
@@ -407,11 +516,11 @@
     </a>
     {% endfor %}
 
-    <div class="cat-sidebar-label" style="margin-top: 24px; display: flex; justify-content: space-between; align-items: center;">
-      <span>Team Workspaces</span>
+    {% if user_teams %}
+    <div class="cat-sidebar-label" style="margin-top: 22px; display: flex; justify-content: space-between; align-items: center;">
+      <span>My Teams</span>
       <a href="{{ url_for('teams_list') }}" style="font-size: 11px; color: #4f46e5; text-decoration: none; font-weight: 700;" title="Manage teams">+ Manage</a>
     </div>
-    {% if user_teams %}
       {% for t in user_teams %}
       <a href="{{ url_for('team_workspace', team_id=t.id) }}" class="cat-item" style="font-size: 13px;" title="{{ t.name }} ({{ t.member_count }} members, {{ t.link_count }} links)">
         <i class="bi bi-people-fill" style="color: #4f46e5;"></i>
@@ -419,10 +528,6 @@
         <span class="count" title="{{ t.link_count }} links">{{ t.link_count }}</span>
       </a>
       {% endfor %}
-    {% else %}
-      <a href="{{ url_for('teams_list') }}" class="cat-item" style="font-size: 12px; color: #64748b;">
-        <i class="bi bi-plus-circle"></i> Create or Join Team
-      </a>
     {% endif %}
   </aside>
 
