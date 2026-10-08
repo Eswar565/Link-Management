@@ -45,31 +45,46 @@ def admin_required(f):
 def create_app():
     load_dotenv(os.path.join(basedir, ".env"))
 
-    app = Flask(__name__)
+    app = Flask(
+        __name__,
+        template_folder=os.path.join(basedir, "templates"),
+        static_folder=os.path.join(basedir, "static"),
+    )
 
     # ── Config ───────────────────────────────────────────────────────────────
     app.config["SECRET_KEY"] = os.getenv(
         "SECRET_KEY", "linkvault-dev-secret-change-in-production"
     )
 
-    database_url = os.getenv("DATABASE_URL")
+    database_url = os.getenv("DATABASE_URL") or os.getenv("POSTGRES_URL")
     if not database_url or not database_url.strip():
         raise RuntimeError(
             "\n" + "=" * 70 + "\n"
-            "CRITICAL: DATABASE_URL is missing from your .env file!\n\n"
-            "Copy .env.example to .env and set your credentials:\n"
-            "  DATABASE_URL=postgresql+psycopg://postgres:PASSWORD@localhost:5432/link-management\n"
+            "CRITICAL: DATABASE_URL is missing!\n\n"
+            "Local development:\n"
+            "  Set DATABASE_URL in your .env file:\n"
+            "  DATABASE_URL=postgresql+psycopg://postgres:PASSWORD@localhost:5432/link-management\n\n"
+            "Vercel deployment:\n"
+            "  Add DATABASE_URL (or connect Vercel Postgres / Neon) in your\n"
+            "  Vercel Project Settings > Environment Variables.\n"
             + "=" * 70
         )
 
     database_url = database_url.strip()
     if database_url.startswith("postgres://"):
         database_url = database_url.replace("postgres://", "postgresql+psycopg://", 1)
+    elif database_url.startswith("postgresql://"):
+        database_url = database_url.replace("postgresql://", "postgresql+psycopg://", 1)
+
+    # Serverless tuning (Vercel sets VERCEL=1)
+    is_serverless = os.getenv("VERCEL") == "1"
+    pool_size = 5 if is_serverless else 10
+    max_overflow = 10 if is_serverless else 20
 
     app.config["SQLALCHEMY_DATABASE_URI"] = database_url
     app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
-        "pool_size": 10,
-        "max_overflow": 20,
+        "pool_size": pool_size,
+        "max_overflow": max_overflow,
         "pool_pre_ping": True,
         "pool_recycle": 1800,
     }
@@ -83,9 +98,12 @@ def create_app():
     login_manager.login_message_category = "info"
 
     with app.app_context():
-        db.create_all()
-        _migrate_schema()
-        _seed_admin()
+        try:
+            db.create_all()
+            _migrate_schema()
+            _seed_admin()
+        except Exception as e:
+            app.logger.warning(f"[LinkVault] Startup database migration note: {e}")
 
     # ═══════════════════════════════════════════════════════════════════════════
     # AUTH ROUTES
