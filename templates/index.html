@@ -160,11 +160,11 @@
   }
 
   .search-wrap { position: relative; flex: 1; min-width: 220px; }
-  .search-wrap i { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: #475569; font-size: 14px; pointer-events: none; }
+  .search-wrap > i { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: #475569; font-size: 14px; pointer-events: none; }
 
   .search-input {
     width: 100%;
-    padding: 10px 16px 10px 42px;
+    padding: 10px 42px 10px 42px;
     background: #ffffff;
     border: 1.5px solid #cbd5e1;
     border-radius: 99px;
@@ -173,6 +173,31 @@
     color: #0f172a;
     outline: none;
     transition: border-color .15s, box-shadow .15s, background .15s;
+  }
+
+  .btn-clear-input {
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    border: none;
+    background: transparent;
+    padding: 0;
+    margin: 0;
+    color: #94a3b8;
+    font-size: 16px;
+    cursor: pointer;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    transition: color .15s, transform .12s;
+  }
+  .btn-clear-input:hover {
+    color: #475569;
+    transform: translateY(-50%) scale(1.15);
   }
 
   .search-input:focus { border-color: var(--accent); background: #fff; box-shadow: 0 0 0 3px rgba(79,70,229,.14); }
@@ -412,6 +437,11 @@
           <input type="text" name="q" id="search-input" class="search-input"
                  placeholder="Search by title or URL…"
                  value="{{ search_query }}" autocomplete="off" />
+          <button type="button" class="btn-clear-input" id="btn-clear-input"
+                  title="Clear search" aria-label="Clear search"
+                  style="display: {{ 'flex' if search_query else 'none' }};">
+            <i class="bi bi-x-circle-fill"></i>
+          </button>
         </div>
         <div class="sel-wrap">
           <select name="category" id="cat-select" class="search-cat-sel"
@@ -670,6 +700,53 @@
   }
 
 
+  // ── Search Input Clear & Refresh Reset ─────────────────────────────────────
+  const si = document.getElementById('search-input');
+  const clearBtn = document.getElementById('btn-clear-input');
+  const hadSearchQuery = {{ 'true' if search_query else 'false' }};
+  const cleanUrl = '{{ url_for("index", category=selected_category) if selected_category else url_for("index") }}';
+
+  // If page was loaded with a search query, clean the browser URL state so that
+  // pressing Refresh (F5 / reload) immediately returns to all links (clean state)
+  if (hadSearchQuery && window.history.replaceState) {
+    window.history.replaceState({}, document.title, cleanUrl);
+  }
+
+  // Handle browser reload specifically: if user clicks reload while on search, reset cleanly
+  try {
+    const navEntries = performance.getEntriesByType('navigation');
+    if (navEntries.length > 0 && navEntries[0].type === 'reload' && hadSearchQuery) {
+      window.location.replace(cleanUrl);
+    }
+  } catch(e) {}
+
+  if (si && clearBtn) {
+    // Show/hide clear button dynamically as user types (without reloading)
+    si.addEventListener('input', function() {
+      clearBtn.style.display = this.value.trim().length > 0 ? 'flex' : 'none';
+    });
+
+    // Clear button click handler
+    clearBtn.addEventListener('click', function() {
+      si.value = '';
+      clearBtn.style.display = 'none';
+      si.focus();
+      if (hadSearchQuery) {
+        window.location.href = cleanUrl;
+      }
+    });
+
+    // Escape key clears search
+    si.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape' && this.value) {
+        si.value = '';
+        clearBtn.style.display = 'none';
+        if (hadSearchQuery) {
+          window.location.href = cleanUrl;
+        }
+      }
+    });
+  }
 </script>
 {% endblock %}
 

@@ -161,4 +161,17 @@
 {% endblock %}
 
 {% block scripts %}
+<script>
+  const hadSearch = {{ 'true' if search else 'false' }};
+  const cleanUrl = '{{ url_for("admin_users", role=role_filter) if role_filter else url_for("admin_users") }}';
+  if (hadSearch && window.history.replaceState) {
+    window.history.replaceState({}, document.title, cleanUrl);
+  }
+  try {
+    const navEntries = performance.getEntriesByType('navigation');
+    if (navEntries.length > 0 && navEntries[0].type === 'reload' && hadSearch) {
+      window.location.replace(cleanUrl);
+    }
+  } catch(e) {}
+</script>
 {% endblock %}
