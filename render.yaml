@@ -1,0 +1,24 @@
+databases:
+  - name: linkvault-db
+    databaseName: linkvault
+    user: linkvault
+    plan: free
+
+services:
+  - type: web
+    name: linkvault-app
+    runtime: python
+    plan: free
+    buildCommand: "./build.sh"
+    startCommand: "gunicorn app:app"
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: linkvault-db
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true
+      - key: PYTHON_VERSION
+        value: 3.12.8
+      - key: FLASK_ENV
+        value: production
